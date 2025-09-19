@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Poartă – Control mobil (progres sincron)</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1220; --card:#071022; --ok:#22c55e; --err:#ef4444; --muted:#9fb0d8;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071026);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+  .wrap{max-width:440px;margin:0 auto;padding:0 10px 16px}
+  .tabbar{position:sticky;top:0;background:transparent;padding:10px 0 8px;z-index:10;display:flex;gap:8px}
+  .tabbtn{flex:1;padding:10px;border:1px solid rgba(255,255,255,.07);background:#0b1428;color:#dfe9ff;border-radius:10px;font-weight:600}
+  .tabbtn.active{background:#123;border-color:#2c4272}
+  .card{background:var(--card);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.03);margin-top:10px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  input[type=text],input[type=password]{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:transparent;color:#dfe9ff}
+  .btn{padding:10px;border-radius:10px;border:0;background:linear-gradient(180deg,#11366b,#07224a);color:#fff;font-weight:700}
+  .btn.secondary{background:linear-gradient(180deg,#2a2a2a,#141414)}
+  .controls{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .small{color:var(--muted);font-size:12px}
+  .title{color:#fff;font-weight:800;font-size:16px;margin:0}
+  .top{display:flex;align-items:center;justify-content:space-between}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--err);display:inline-block}
+  progress{width:100%;height:10px;border-radius:8px;overflow:hidden}
+
+  /* ZONA POARTĂ (sincron pe progres) */
+  .gateWrap{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06);background:linear-gradient(90deg,#081021,#05101a)}
+  .viewport{
+    position:relative;
+    height:220px;
+    /* permite SCROLL vertical; gestul orizontal e tratat în JS */
+    touch-action: pan-y;
+  }
+  /* „peretele” din stânga */
+  .wall{position:absolute;left:0;top:0;width:24%;height:100%;background:linear-gradient(90deg,#000 0%, rgba(0,0,0,0.65) 70%, transparent 100%);pointer-events:none;z-index:2}
+  /* imaginea porții controlată de progres: --prog în [0..1] */
+  #gateImg{
+    --prog: 0; /* 0 = închis, 1 = deschis */
+    position:absolute;
+    left:4%; top:50%;
+    /* DESCHIDERE SPRE STÂNGA (inversat): */
+    transform:translate(calc(var(--prog) * -65%), -50%);
+    /* opacitate fixă, fără estompare */
+    opacity: 1;
+    filter:none;
+    width:92%; max-width:360px;
+    transition: transform 150ms linear;
+    display:block; z-index:1;
+    box-shadow: 0 10px 18px rgba(0,0,0,.35);
+  }
+
+  @media (max-width:360px){ .viewport{height:190px} }
+  textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#dfe9ff;padding:8px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- TABURI -->
+  <div class="tabbar">
+    <button class="tabbtn active" id="tabGateBtn">Poartă</button>
+    <button class="tabbtn" id="tabSettingsBtn">Setări</button>
+  </div>
+
+  <!-- TAB 1: POARTĂ -->
+  <section id="tabGate" class="card">
+    <div class="top">
+      <h1 class="title">Poartă</h1>
+      <div class="small">Conexiune: <span id="connDot" class="dot"></span></div>
+    </div>
+
+    <div class="small" style="margin-top:6px">
+      <strong>Stare:</strong> <span id="statusText">necunoscut</span>
+    </div>
+    <div class="small" style="margin-top:6px">
+      <strong>Progres:</strong> <span id="pval">0%</span>
+      <progress id="progress" value="0" max="100"></progress>
+    </div>
+
+    <div class="gateWrap">
+      <div class="viewport" id="gateViewport" aria-label="Zona poartă (swipe)">
+        <div class="wall"></div>
+        <img id="gateImg" src="jaluze.JPG" alt="Poartă" />
+      </div>
+    </div>
+
+    <!-- Butoane pe prima pagină -->
+    <div class="controls">
+      <button id="btnConnectMain" class="btn">Conectează</button>
+      <button id="btnOpenMain" class="btn">OPEN</button>
+      <button id="btnCloseMain" class="btn secondary">CLOSE</button>
+    </div>
+
+    <div class="small" style="margin-top:6px">
+      Gesturi: swipe dreapta = CLOSE • swipe stânga = OPEN • tap = STOP
+    </div>
+  </section>
+
+  <!-- TAB 2: SETĂRI -->
+  <section id="tabSettings" class="card" style="display:none">
+    <div class="top">
+      <div>
+        <div class="title" style="font-size:15px">Setări & Conectare</div>
+        <div class="small">MQTT (WebSockets)</div>
+      </div>
+      <div class="small">Client: <span id="clientId">web_—</span></div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <input id="url" type="text" placeholder="wss://broker.emqx.io:8084/mqtt" />
+      <input id="cid" type="text" placeholder="Client ID (opțional)" />
+      <input id="user" type="text" placeholder="User (opțional)" />
+      <input id="pass" type="password" placeholder="Parolă (opțional)" />
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <input id="cmdTopic" type="text" placeholder="kablem/gates/1/cmd" />
+      <input id="statusTopic" type="text" placeholder="kablem/gates/1/status" />
+      <input id="progressTopic" type="text" placeholder="kablem/gates/1/progress" />
+      <div></div>
+    </div>
+
+    <div class="controls">
+      <button id="btnConnect" class="btn">Conectează</button>
+      <button id="btnDisconnect" class="btn secondary" disabled>Deconectează</button>
+    </div>
+
+    <div style="margin-top:10px">
+      <div class="small">Jurnal</div>
+      <textarea id="log" readonly></textarea>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  // --- Helpers / UI ---
+  const $ = s => document.querySelector(s);
+  const log = (m)=>{
+    const t = new Date().toLocaleTimeString();
+    const box = $("#log"); if (box){ box.value = `[${t}] ${m}\n` + box.value; box.scrollTop = 0; }
+  };
+
+  // Tabs
+  const tabGateBtn = $("#tabGateBtn"), tabSettingsBtn = $("#tabSettingsBtn");
+  const tabGate = $("#tabGate"), tabSettings = $("#tabSettings");
+  function showTab(which){
+    const g = which === "gate";
+    tabGate.style.display = g ? "" : "none";
+    tabSettings.style.display = g ? "none" : "";
+    tabGateBtn.classList.toggle("active", g);
+    tabSettingsBtn.classList.toggle("active", !g);
+  }
+  tabGateBtn.addEventListener("click", ()=>showTab("gate"));
+  tabSettingsBtn.addEventListener("click", ()=>showTab("settings"));
+
+  // Defaults
+  $("#url").value = "wss://broker.emqx.io:8084/mqtt";
+  $("#cmdTopic").value = "kablem/gates/1/cmd";
+  $("#statusTopic").value = "kablem/gates/1/status";
+  $("#progressTopic").value = "kablem/gates/1/progress";
+
+  const connDot = $("#connDot");
+  const statusText = $("#statusText");
+  const progressEl = $("#progress");
+  const pval = $("#pval");
+  const gateImg = $("#gateImg");
+  const clientIdEl = $("#clientId");
+  const gateViewport = $("#gateViewport");
+
+  // Funcție: redă UI în funcție de procent (0..100)
+  function renderByProgress(p){
+    const clamped = Math.max(0, Math.min(100, Number(p)||0));
+    progressEl.value = clamped;
+    pval.textContent = clamped + "%";
+    gateImg.style.setProperty('--prog', (clamped/100).toString());
+  }
+
+  // --- MQTT ---
+  let client = null, connected = false;
+  function setUiConnected(v){
+    connected = v;
+    $("#btnConnect").disabled = v;
+    $("#btnDisconnect").disabled = !v;
+    connDot.style.background = v ? "#22c55e" : "#ef4444";
+  }
+  function mqttConnect(){
+    if (connected) return;
+    const url = $("#url").value.trim();
+    const cid = ($("#cid").value.trim() || ("web_"+Math.random().toString(16).slice(2)));
+    clientIdEl.textContent = cid;
+    const opts = {
+      clientId: cid,
+      username: $("#user").value.trim() || undefined,
+      password: $("#pass").value.trim() || undefined,
+      reconnectPeriod: 2000,
+      clean: true
+    };
+    log("Connecting to " + url + " ...");
+    client = mqtt.connect(url, opts);
+
+    client.on("connect", ()=>{
+      setUiConnected(true);
+      log("Connected");
+      const topics = [
+        $("#statusTopic").value.trim(),
+        $("#progressTopic").value.trim()
+      ];
+      client.subscribe(topics, (err)=>{
+        if (err) log("Subscribe error: "+err.message); else log("Subscribed: " + topics.join(", "));
+      });
+      client.publish($("#cmdTopic").value.trim(), "STATUS?");
+    });
+
+    client.on("message", (topic, payload)=>{
+      const msg = payload.toString();
+      log("MSG " + topic + " → " + msg);
+
+      if (topic === $("#statusTopic").value.trim()){
+        statusText.textContent = msg;
+      }
+      if (topic === $("#progressTopic").value.trim()){
+        const n = parseInt(msg, 10);
+        if (!isNaN(n)) renderByProgress(n);
+      }
+    });
+
+    client.on("reconnect", ()=> log("Reconnecting..."));
+    client.on("error", (e)=> log("MQTT error: "+(e && e.message || e)));
+    client.on("close", ()=>{ log("Disconnected"); setUiConnected(false); });
+  }
+  function mqttDisconnect(){ if (client){ client.end(true); client=null; setUiConnected(false); log("Client closed"); } }
+  $("#btnConnect").addEventListener("click", mqttConnect);
+  $("#btnDisconnect").addEventListener("click", mqttDisconnect);
+
+  // Butonul Conectează de pe prima pagină — rămâi pe tabul Poartă
+  $("#btnConnectMain").addEventListener("click", ()=>{ mqttConnect(); });
+
+  // --- Comenzi ---
+  function publishCmd(cmd){
+    if (!client || !connected){ log("Not connected"); return; }
+    const t = $("#cmdTopic").value.trim();
+    client.publish(t, cmd, {qos:1}, (err)=> log(err ? ("Publish error "+err.message) : ("Published "+cmd+" → "+t)));
+  }
+  $("#btnOpenMain").addEventListener("click", ()=> publishCmd("OPEN"));
+  $("#btnCloseMain").addEventListener("click", ()=> publishCmd("CLOSE"));
+
+  // Gesturi corectate: scroll vertical permis; swipe orizontal detectat clar
+  // (inversăm: stânga = OPEN, dreapta = CLOSE)
+  let sx=null, sy=null, isHorizontalSwipe=false;
+  gateViewport.addEventListener("touchstart",(ev)=>{
+    const t=ev.changedTouches[0];
+    sx=t.clientX; sy=t.clientY; isHorizontalSwipe=false;
+  },{passive:true});
+
+  gateViewport.addEventListener("touchmove",(ev)=>{
+    if (sx==null) return;
+    const t=ev.changedTouches[0];
+    const dx=t.clientX-sx, dy=t.clientY-sy;
+    const absX=Math.abs(dx), absY=Math.abs(dy);
+    if (!isHorizontalSwipe && absX>40 && absX>absY){
+      isHorizontalSwipe = true;
+    }
+    if (isHorizontalSwipe){
+      ev.preventDefault(); // blocăm scrollul doar când e swipe orizontal
+    }
+  },{passive:false});
+
+  gateViewport.addEventListener("touchend",(ev)=>{
+    if (sx==null) return;
+    const t=ev.changedTouches[0];
+    const dx=t.clientX-sx, dy=t.clientY-sy;
+    const absX=Math.abs(dx), absY=Math.abs(dy);
+
+    if (isHorizontalSwipe && absX>40 && absX>absY){
+      if (dx > 0){        // swipe DREAPTA
+        publishCmd("CLOSE");
+      } else {            // swipe STÂNGA
+        publishCmd("OPEN");
+      }
+    } else {
+      // tap/scroll -> opțional STOP
+      // publishCmd("STOP"); log("Tap: STOP");
+    }
+    sx=sy=null; isHorizontalSwipe=false;
+  },{passive:true});
+
+  // mouse fallback (desktop) – la fel, inversat:
+  let mx=null;
+  gateViewport.addEventListener("mousedown",(e)=>{ mx=e.clientX; });
+  gateViewport.addEventListener("mouseup",(e)=>{
+    if (mx==null) return;
+    const dx=e.clientX-mx;
+    if (Math.abs(dx)>40){
+      if (dx > 0){        // dreapta
+        publishCmd("CLOSE");
+      } else {            // stânga
+        publishCmd("OPEN");
+      }
+    } else { /* publishCmd("STOP"); log("Click: STOP"); */ }
+    mx=null;
+  });
+
+  // Inițial: arată progres 0 (închis)
+  renderByProgress(0);
+})();
+</script>
+</body>
+</html>
