@@ -3,18 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Poartă – Control mobil (progres sincron)</title>
 <title>Poartă – Control mobil + Calibrare</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
-  :root{
-    --bg:#0b1220; --card:#071022; --ok:#22c55e; --err:#ef4444; --muted:#9fb0d8;
-  }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071026);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
-  .wrap{max-width:440px;margin:0 auto;padding:0 10px 16px}
-:root{ --bg:#0b1220; --card:#071022; --ok:#22c55e; --err:#ef4444; --muted:#9fb0d8; }
-html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071026);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-.wrap{max-width:480px;margin:0 auto;padding:0 10px 16px}
+  :root{ --bg:#0b1220; --card:#071022; --ok:#22c55e; --err:#ef4444; --muted:#9fb0d8; }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071026);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .wrap{max-width:480px;margin:0 auto;padding:0 10px 16px}
   .tabbar{position:sticky;top:0;background:transparent;padding:10px 0 8px;z-index:10;display:flex;gap:8px}
   .tabbtn{flex:1;padding:10px;border:1px solid rgba(255,255,255,.07);background:#0b1428;color:#dfe9ff;border-radius:10px;font-weight:600}
   .tabbtn.active{background:#123;border-color:#2c4272}
@@ -30,58 +24,27 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#0710
   .dot{width:10px;height:10px;border-radius:50%;background:var(--err);display:inline-block}
   progress{width:100%;height:10px;border-radius:8px;overflow:hidden}
 
-.tabbar{position:sticky;top:0;background:transparent;padding:10px 0 8px;z-index:10;display:flex;gap:8px}
-.tabbtn{flex:1;padding:10px;border:1px solid rgba(255,255,255,.07);background:#0b1428;color:#dfe9ff;border-radius:10px;font-weight:600}
-.tabbtn.active{background:#123;border-color:#2c4272}
-@@ -26,42 +24,35 @@
-.dot{width:10px;height:10px;border-radius:50%;background:var(--err);display:inline-block}
-progress{width:100%;height:10px;border-radius:8px;overflow:hidden}
-
-  /* ZONA POARTĂ (sincron pe progres) */
-/* ZONA POARTĂ */
+  /* ZONA POARTĂ */
   .gateWrap{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06);background:linear-gradient(90deg,#081021,#05101a)}
-.gateWrap{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06);background:linear-gradient(90deg,#081021,#05101a)}
-  .viewport{
-    position:relative;
-    height:220px;
-    /* permite SCROLL vertical; gestul orizontal e tratat în JS */
-    touch-action: pan-y;
-  }
-  /* „peretele” din stânga */
-.viewport{position:relative;height:220px;touch-action: pan-y}
+  .viewport{position:relative;height:220px;touch-action: pan-y}
   .wall{position:absolute;left:0;top:0;width:24%;height:100%;background:linear-gradient(90deg,#000 0%, rgba(0,0,0,0.65) 70%, transparent 100%);pointer-events:none;z-index:2}
   #gateImg{
-.wall{position:absolute;left:0;top:0;width:24%;height:100%;background:linear-gradient(90deg,#000 0%, rgba(0,0,0,0.65) 70%, transparent 100%);pointer-events:none;z-index:2}
-  /* imaginea porții controlată de progres: --prog în [0..1] */
-#gateImg{
-    --prog: 0; /* 0 = închis, 1 = deschis */
-    position:absolute;
-    left:4%; top:50%;
-    /* DESCHIDERE SPRE STÂNGA (inversat): */
---prog: 0; position:absolute; left:4%; top:50%;
+    --prog: 0; position:absolute; left:4%; top:50%;
     transform:translate(calc(var(--prog) * -65%), -50%);
-transform:translate(calc(var(--prog) * -65%), -50%);
-    /* opacitate fixă, fără estompare */
-    opacity: 1;
-    filter:none;
-    width:92%; max-width:360px;
-    transition: transform 150ms linear;
-    display:block; z-index:1;
-    box-shadow: 0 10px 18px rgba(0,0,0,.35);
-opacity:1; filter:none; width:92%; max-width:360px;
-transition: transform 150ms linear; display:block; z-index:1;
-box-shadow:0 10px 18px rgba(0,0,0,.35)
+    opacity:1; filter:none; width:92%; max-width:360px;
+    transition: transform 150ms linear; display:block; z-index:1;
+    box-shadow:0 10px 18px rgba(0,0,0,.35)
   }
   @media (max-width:360px){ .viewport{height:190px} }
   textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#dfe9ff;padding:8px;font-size:12px}
-}
 
-@media (max-width:360px){ .viewport{height:190px} }
-textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#dfe9ff;padding:8px;font-size:12px}
-
-/* Calibrare */
-.badge{display:inline-block;padding:3px 8px;border-radius:8px;background:#173a7a;margin-left:6px}
-@@ -48,94 +65,43 @@
+  /* Calibrare */
+  .badge{display:inline-block;padding:3px 8px;border-radius:8px;background:#173a7a;margin-left:6px}
+  .ok{background:#1f6d3a} .warn{background:#6a5b18} .err{background:#7a1f1f}
+  .pill{display:inline-block;padding:3px 8px;border-radius:999px;margin-left:6px}
+  .on{background:#1f6d3a} .off{background:#7a1f1f}
+</style>
+</head>
 <body>
 <div class="wrap">
 
@@ -89,11 +52,7 @@ textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255
   <div class="tabbar">
     <button class="tabbtn active" id="tabGateBtn">Poartă</button>
     <button class="tabbtn" id="tabSettingsBtn">Setări</button>
-<!-- TABURI -->
-<div class="tabbar">
-<button class="tabbtn active" id="tabGateBtn">Poartă</button>
-<button class="tabbtn" id="tabSettingsBtn">Setări</button>
-<button class="tabbtn" id="tabCalibBtn">Calibrare</button>
+    <button class="tabbtn" id="tabCalibBtn">Calibrare</button>
   </div>
 
   <!-- TAB 1: POARTĂ -->
@@ -102,7 +61,6 @@ textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255
       <h1 class="title">Poartă</h1>
       <div class="small">Conexiune: <span id="connDot" class="dot"></span></div>
     </div>
-</div>
 
     <div class="small" style="margin-top:6px">
       <strong>Stare:</strong> <span id="statusText">necunoscut</span>
@@ -111,17 +69,11 @@ textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255
       <strong>Progres:</strong> <span id="pval">0%</span>
       <progress id="progress" value="0" max="100"></progress>
     </div>
-<!-- TAB 1: POARTĂ -->
-@@ -82,12 +73,10 @@ <h1 class="title">Poartă</h1>
-<div class="gateWrap">
-<div class="viewport" id="gateViewport" aria-label="Zona poartă (swipe)">
-<div class="wall"></div>
-       <img id="gateImg" src="poarta.JPG" alt="Poartă" />
 
     <div class="gateWrap">
       <div class="viewport" id="gateViewport" aria-label="Zona poartă (swipe)">
         <div class="wall"></div>
-<img id="gateImg" src="poarta.JPG" alt="Poartă" />
+        <img id="gateImg" src="poarta.JPG" alt="Poartă" />
       </div>
     </div>
 
@@ -164,298 +116,175 @@ textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255
       <button id="btnConnect" class="btn">Conectează</button>
       <button id="btnDisconnect" class="btn secondary" disabled>Deconectează</button>
     </div>
-</div>
-</div>
 
     <div style="margin-top:10px">
       <div class="small">Jurnal</div>
       <textarea id="log" readonly></textarea>
     </div>
   </section>
-    <!-- Butoane pe prima pagină -->
-<div class="controls">
-<button id="btnConnectMain" class="btn">Conectează</button>
-<button id="btnOpenMain" class="btn">OPEN</button>
-@@ -133,181 +122,211 @@ <h1 class="title">Poartă</h1>
-<textarea id="log" readonly></textarea>
-</div>
-</section>
 
-<!-- TAB 3: CALIBRARE (REST pe ESP) -->
-<section id="tabCalib" class="card" style="display:none">
-<div class="top">
-<div class="title" style="font-size:15px">Calibrare (ESP REST)</div>
-<div class="small">
-ESP URL:
+  <!-- TAB 3: CALIBRARE (REST pe ESP) -->
+  <section id="tabCalib" class="card" style="display:none">
+    <div class="top">
+      <div class="title" style="font-size:15px">Calibrare (ESP REST)</div>
+      <div class="small">
+        ESP URL:
         <input id="espUrl" type="text" placeholder="http://192.168.0.42" style="width:180px">
         <button class="btn" id="btnTest" style="padding:6px 10px;margin-left:6px">Test</button>
-        <input id="espUrl" type="text" placeholder="http://esp.local" style="width:180px">
-</div>
-</div>
+      </div>
+    </div>
 
     <div id="errBox" class="badge err" style="display:none;margin:6px 0"></div>
 
-<div class="small" style="margin-top:6px">
-<b>Stare ESP:</b> <span id="st">—</span>
-<span class="badge">Progres: <span id="pr">0</span>%</span>
-@@ -192,21 +158,35 @@ <h1 class="title">Poartă</h1>
+    <div class="small" style="margin-top:6px">
+      <b>Stare ESP:</b> <span id="st">—</span>
+      <span class="badge">Progres: <span id="pr">0</span>%</span>
+    </div>
+    <progress id="pg" max="100" value="0"></progress>
+
+    <div class="small" style="margin-top:6px">
+      Senzor OPEN: <span id="so" class="pill off">OFF</span> •
+      Senzor CLOSED: <span id="sc" class="pill off">OFF</span>
+    </div>
+
+    <div class="card" style="margin:10px -10px 0 -10px">
+      <b>Calibrare OPEN</b>
+      <div class="small">Pornește din <b>CLOSED</b>. Apasă <i>Start</i>. Se oprește singur la capăt.</div>
+      <div class="small" style="margin-top:6px">
+        Timp măsurat: <b><span id="mo">—</span> ms</b>
+        <span id="co" class="badge">idle</span>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="calibStart('open',0)">Start</button>
+        <button class="btn secondary" onclick="calibStart('open',1)">Force start</button>
+        <button class="btn secondary" onclick="saveCalib('open')">Save OPEN</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin:10px -10px -10px -10px">
+      <b>Calibrare CLOSE</b>
+      <div class="small">Pornește din <b>OPEN</b>. Apasă <i>Start</i>. Se oprește singur la capăt.</div>
+      <div class="small" style="margin-top:6px">
+        Timp măsurat: <b><span id="mc">—</span> ms</b>
+        <span id="cc" class="badge">idle</span>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="calibStart('close',0)">Start</button>
+        <button class="btn secondary" onclick="calibStart('close',1)">Force start</button>
+        <button class="btn secondary" onclick="saveCalib('close')">Save CLOSE</button>
+      </div>
+
+      <div id="msg" class="badge warn" style="display:none;margin:8px 10px 0 10px"></div>
+
+      <div class="small" style="margin:10px">
+        Timpi salvați: OPEN <b><span id="to">—</span> ms</b> • CLOSE <b><span id="tc">—</span> ms</b>
+      </div>
+
+      <div class="controls" style="margin-top:4px">
+        <button class="btn" onclick="sendCmd('OPEN')">OPEN</button>
+        <button class="btn secondary" onclick="sendCmd('CLOSE')">CLOSE</button>
+        <button class="btn secondary" onclick="sendCmd('STOP')">STOP</button>
+      </div>
+    </div>
+  </section>
+
+</div>
 
 <script>
 (function(){
   const $ = s => document.querySelector(s);
-  // --- Helpers / UI ---
-const $ = s => document.querySelector(s);
-  const log = (m)=>{
-    const t = new Date().toLocaleTimeString();
-    const box = $("#log"); if (box){ box.value = `[${t}] ${m}\n` + box.value; box.scrollTop = 0; }
-  };
 
-  // Tabs
-  const tabGateBtn = $("#tabGateBtn"), tabSettingsBtn = $("#tabSettingsBtn");
-  const tabGate = $("#tabGate"), tabSettings = $("#tabSettings");
-
-/* ---------- Tabs ---------- */
-const tabGateBtn = $("#tabGateBtn"), tabSettingsBtn = $("#tabSettingsBtn"), tabCalibBtn = $("#tabCalibBtn");
-const tabGate = $("#tabGate"), tabSettings = $("#tabSettings"), tabCalib = $("#tabCalib");
+  /* ---------- Tabs ---------- */
+  const tabGateBtn = $("#tabGateBtn"), tabSettingsBtn = $("#tabSettingsBtn"), tabCalibBtn = $("#tabCalibBtn");
+  const tabGate = $("#tabGate"), tabSettings = $("#tabSettings"), tabCalib = $("#tabCalib");
   function showTab(which){
-function showTab(which){
-    const g = which === "gate";
-    tabGate.style.display = g ? "" : "none";
-    tabSettings.style.display = g ? "none" : "";
-    tabGateBtn.classList.toggle("active", g);
-    tabSettingsBtn.classList.toggle("active", !g);
-tabGate.style.display     = which==="gate"     ? "" : "none";
-tabSettings.style.display = which==="settings" ? "" : "none";
-tabCalib.style.display    = which==="calib"    ? "" : "none";
-tabGateBtn.classList.toggle("active", which==="gate");
-tabSettingsBtn.classList.toggle("active", which==="settings");
-tabCalibBtn.classList.toggle("active", which==="calib");
+    tabGate.style.display     = which==="gate"     ? "" : "none";
+    tabSettings.style.display = which==="settings" ? "" : "none";
+    tabCalib.style.display    = which==="calib"    ? "" : "none";
+    tabGateBtn.classList.toggle("active", which==="gate");
+    tabSettingsBtn.classList.toggle("active", which==="settings");
+    tabCalibBtn.classList.toggle("active", which==="calib");
   }
   tabGateBtn.addEventListener("click", ()=>showTab("gate"));
   tabSettingsBtn.addEventListener("click", ()=>showTab("settings"));
-}
-tabGateBtn.addEventListener("click", ()=>showTab("gate"));
-tabSettingsBtn.addEventListener("click", ()=>showTab("settings"));
-tabCalibBtn.addEventListener("click", ()=>showTab("calib"));
+  tabCalibBtn.addEventListener("click", ()=>showTab("calib"));
 
-/* ---------- MQTT (tab Poartă) ---------- */
-@@ -218,148 +198,234 @@ <h1 class="title">Poartă</h1>
+  /* ---------- MQTT (tab Poartă) ---------- */
+  const log = (m)=>{ const t=new Date().toLocaleTimeString(); const box=$("#log"); if(box){ box.value=`[${t}] ${m}\n`+box.value; box.scrollTop=0; } };
+  $("#url").value="wss://broker.emqx.io:8084/mqtt";
+  $("#cmdTopic").value="kablem/gates/1/cmd";
+  $("#statusTopic").value="kablem/gates/1/status";
+  $("#progressTopic").value="kablem/gates/1/progress";
 
-const connDot=$("#connDot"), statusText=$("#statusText"), progressEl=$("#progress"), pval=$("#pval"), gateImg=$("#gateImg"), clientIdEl=$("#clientId"), gateViewport=$("#gateViewport");
+  const connDot=$("#connDot"), statusText=$("#statusText"), progressEl=$("#progress"), pval=$("#pval"), gateImg=$("#gateImg"), clientIdEl=$("#clientId"), gateViewport=$("#gateViewport");
 
   function renderByProgress(p){
-  // Defaults
-  $("#url").value = "wss://broker.emqx.io:8084/mqtt";
-  $("#cmdTopic").value = "kablem/gates/1/cmd";
-  $("#statusTopic").value = "kablem/gates/1/status";
-  $("#progressTopic").value = "kablem/gates/1/progress";
+    const clamped=Math.max(0,Math.min(100,Number(p)||0));
+    progressEl.value=clamped; pval.textContent=clamped+"%";
+    gateImg.style.setProperty('--prog',(clamped/100).toString());
+  }
 
-  const connDot = $("#connDot");
-  const statusText = $("#statusText");
-  const progressEl = $("#progress");
-  const pval = $("#pval");
-  const gateImg = $("#gateImg");
-  const clientIdEl = $("#clientId");
-  const gateViewport = $("#gateViewport");
-
-  // Funcție: redă UI în funcție de procent (0..100)
-function renderByProgress(p){
-    const clamped = Math.max(0, Math.min(100, Number(p)||0));
-    progressEl.value = clamped;
-    pval.textContent = clamped + "%";
-    gateImg.style.setProperty('--prog', (clamped/100).toString());
-const clamped=Math.max(0,Math.min(100,Number(p)||0));
-progressEl.value=clamped; pval.textContent=clamped+"%";
-gateImg.style.setProperty('--prog',(clamped/100).toString());
-}
-
-  // --- MQTT ---
-  let client = null, connected = false;
-  function setUiConnected(v){
-    connected = v;
-    $("#btnConnect").disabled = v;
-    $("#btnDisconnect").disabled = !v;
-    connDot.style.background = v ? "#22c55e" : "#ef4444";
-}
-
-let client=null, connected=false;
-function setUiConnected(v){ connected=v; $("#btnConnect").disabled=v; $("#btnDisconnect").disabled=!v; connDot.style.background=v?"#22c55e":"#ef4444"; }
+  let client=null, connected=false;
+  function setUiConnected(v){ connected=v; $("#btnConnect").disabled=v; $("#btnDisconnect").disabled=!v; connDot.style.background=v?"#22c55e":"#ef4444"; }
   function mqttConnect(){
     if (connected) return;
-function mqttConnect(){
-if (connected) return;
-    const url = $("#url").value.trim();
-    const cid = ($("#cid").value.trim() || ("web_"+Math.random().toString(16).slice(2)));
-    clientIdEl.textContent = cid;
-    const opts = {
-      clientId: cid,
-      username: $("#user").value.trim() || undefined,
-      password: $("#pass").value.trim() || undefined,
-      reconnectPeriod: 2000,
-      clean: true
-    };
-    log("Connecting to " + url + " ...");
-    client = mqtt.connect(url, opts);
-
-const url=$("#url").value.trim();
-const cid=$("#cid").value.trim()||("web_"+Math.random().toString(16).slice(2));
-clientIdEl.textContent=cid;
-const opts={clientId:cid,username:$("#user").value.trim()||undefined,password:$("#pass").value.trim()||undefined,reconnectPeriod:2000,clean:true};
-log("Connecting to "+url+" ...");
-client=mqtt.connect(url,opts);
+    const url=$("#url").value.trim();
+    const cid=$("#cid").value.trim()||("web_"+Math.random().toString(16).slice(2));
+    clientIdEl.textContent=cid;
+    const opts={clientId:cid,username:$("#user").value.trim()||undefined,password:$("#pass").value.trim()||undefined,reconnectPeriod:2000,clean:true};
+    log("Connecting to "+url+" ...");
+    client=mqtt.connect(url,opts);
     client.on("connect", ()=>{
-client.on("connect", ()=>{
-      setUiConnected(true);
-      log("Connected");
-      const topics = [
-        $("#statusTopic").value.trim(),
-        $("#progressTopic").value.trim()
-      ];
-      client.subscribe(topics, (err)=>{
-        if (err) log("Subscribe error: "+err.message); else log("Subscribed: " + topics.join(", "));
-      });
-      client.publish($("#cmdTopic").value.trim(), "STATUS?");
-setUiConnected(true); log("Connected");
-const topics=[$("#statusTopic").value.trim(), $("#progressTopic").value.trim()];
-client.subscribe(topics,(err)=>{ if(err) log("Subscribe error: "+err.message); else log("Subscribed: "+topics.join(", ")); });
-client.publish($("#cmdTopic").value.trim(),"STATUS?");
+      setUiConnected(true); log("Connected");
+      const topics=[$("#statusTopic").value.trim(), $("#progressTopic").value.trim()];
+      client.subscribe(topics,(err)=>{ if(err) log("Subscribe error: "+err.message); else log("Subscribed: "+topics.join(", ")); });
+      client.publish($("#cmdTopic").value.trim(),"STATUS?");
     });
-});
-
-    client.on("message", (topic, payload)=>{
-      const msg = payload.toString();
-      log("MSG " + topic + " → " + msg);
-
-      if (topic === $("#statusTopic").value.trim()){
-        statusText.textContent = msg;
-      }
-      if (topic === $("#progressTopic").value.trim()){
-        const n = parseInt(msg, 10);
-        if (!isNaN(n)) renderByProgress(n);
-      }
-client.on("message",(topic,payload)=>{
-const msg=payload.toString(); log("MSG "+topic+" → "+msg);
-if (topic===$("#statusTopic").value.trim()) { statusText.textContent=msg; }
-if (topic===$("#progressTopic").value.trim()) { const n=parseInt(msg,10); if(!isNaN(n)) renderByProgress(n); }
+    client.on("message",(topic,payload)=>{
+      const msg=payload.toString(); log("MSG "+topic+" → "+msg);
+      if (topic===$("#statusTopic").value.trim()) { statusText.textContent=msg; }
+      if (topic===$("#progressTopic").value.trim()) { const n=parseInt(msg,10); if(!isNaN(n)) renderByProgress(n); }
     });
-});
-
-    client.on("reconnect", ()=> log("Reconnecting..."));
-    client.on("error", (e)=> log("MQTT error: "+(e && e.message || e)));
-    client.on("close", ()=>{ log("Disconnected"); setUiConnected(false); });
-client.on("reconnect",()=>log("Reconnecting..."));
-client.on("error",(e)=>log("MQTT error: "+(e&&e.message||e)));
-client.on("close",()=>{ log("Disconnected"); setUiConnected(false); });
+    client.on("reconnect",()=>log("Reconnecting..."));
+    client.on("error",(e)=>log("MQTT error: "+(e&&e.message||e)));
+    client.on("close",()=>{ log("Disconnected"); setUiConnected(false); });
   }
-}
-  function mqttDisconnect(){ if (client){ client.end(true); client=null; setUiConnected(false); log("Client closed"); } }
-function mqttDisconnect(){ if(client){ client.end(true); client=null; setUiConnected(false); log("Client closed"); } }
+  function mqttDisconnect(){ if(client){ client.end(true); client=null; setUiConnected(false); log("Client closed"); } }
   $("#btnConnect").addEventListener("click", mqttConnect);
   $("#btnDisconnect").addEventListener("click", mqttDisconnect);
-$("#btnConnect").addEventListener("click", mqttConnect);
-$("#btnDisconnect").addEventListener("click", mqttDisconnect);
-$("#btnConnectMain").addEventListener("click", mqttConnect);
+  $("#btnConnectMain").addEventListener("click", mqttConnect);
 
   function publishCmd(cmd){
     if (!client || !connected){ log("Not connected"); return; }
-  // Butonul Conectează de pe prima pagină — rămâi pe tabul Poartă
-  $("#btnConnectMain").addEventListener("click", ()=>{ mqttConnect(); });
-
-  // --- Comenzi ---
-function publishCmd(cmd){
-if (!client || !connected){ log("Not connected"); return; }
-    const t = $("#cmdTopic").value.trim();
-    client.publish(t, cmd, {qos:1}, (err)=> log(err ? ("Publish error "+err.message) : ("Published "+cmd+" → "+t)));
-const t=$("#cmdTopic").value.trim();
-client.publish(t, cmd, {qos:1}, (err)=> log(err?("Publish error "+err.message):("Published "+cmd+" → "+t)));
+    const t=$("#cmdTopic").value.trim();
+    client.publish(t, cmd, {qos:1}, (err)=> log(err?("Publish error "+err.message):("Published "+cmd+" → "+t)));
   }
   $("#btnOpenMain").addEventListener("click", ()=> publishCmd("OPEN"));
   $("#btnCloseMain").addEventListener("click", ()=> publishCmd("CLOSE"));
-}
-$("#btnOpenMain").addEventListener("click", ()=> publishCmd("OPEN"));
-$("#btnCloseMain").addEventListener("click", ()=> publishCmd("CLOSE"));
 
-  // Gesturi corectate: scroll vertical permis; swipe orizontal detectat clar
-  // (inversăm: stânga = OPEN, dreapta = CLOSE)
-// Gesturi
+  // Gesturi
   let sx=null, sy=null, isHorizontalSwipe=false;
-let sx=null, sy=null, isHorizontalSwipe=false;
-  gateViewport.addEventListener("touchstart",(ev)=>{
-    const t=ev.changedTouches[0];
-    sx=t.clientX; sy=t.clientY; isHorizontalSwipe=false;
-  },{passive:true});
-
-gateViewport.addEventListener("touchstart",(ev)=>{ const t=ev.changedTouches[0]; sx=t.clientX; sy=t.clientY; isHorizontalSwipe=false; },{passive:true});
+  gateViewport.addEventListener("touchstart",(ev)=>{ const t=ev.changedTouches[0]; sx=t.clientX; sy=t.clientY; isHorizontalSwipe=false; },{passive:true});
   gateViewport.addEventListener("touchmove",(ev)=>{
-gateViewport.addEventListener("touchmove",(ev)=>{
-    if (sx==null) return;
-    const t=ev.changedTouches[0];
-    const dx=t.clientX-sx, dy=t.clientY-sy;
-    const absX=Math.abs(dx), absY=Math.abs(dy);
-    if (!isHorizontalSwipe && absX>40 && absX>absY){
-      isHorizontalSwipe = true;
-    }
-    if (isHorizontalSwipe){
-      ev.preventDefault(); // blocăm scrollul doar când e swipe orizontal
-    }
-if (sx==null) return; const t=ev.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy;
-if (!isHorizontalSwipe && Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) isHorizontalSwipe=true;
-if (isHorizontalSwipe) ev.preventDefault();
+    if (sx==null) return; const t=ev.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy;
+    if (!isHorizontalSwipe && Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) isHorizontalSwipe=true;
+    if (isHorizontalSwipe) ev.preventDefault();
   },{passive:false});
   gateViewport.addEventListener("touchend",(ev)=>{
-},{passive:false});
-
-gateViewport.addEventListener("touchend",(ev)=>{
-    if (sx==null) return;
-    const t=ev.changedTouches[0];
-    const dx=t.clientX-sx, dy=t.clientY-sy;
-    const absX=Math.abs(dx), absY=Math.abs(dy);
-
-    if (isHorizontalSwipe && absX>40 && absX>absY){
-      if (dx > 0){        // swipe DREAPTA
-        publishCmd("CLOSE");
-      } else {            // swipe STÂNGA
-        publishCmd("OPEN");
-      }
-    } else {
-      // tap/scroll -> opțional STOP
-      // publishCmd("STOP"); log("Tap: STOP");
-    }
-if (sx==null) return; const t=ev.changedTouches[0]; const dx=t.clientX-sx;
-if (isHorizontalSwipe && Math.abs(dx)>40){ if (dx>0) publishCmd("CLOSE"); else publishCmd("OPEN"); }
+    if (sx==null) return; const t=ev.changedTouches[0]; const dx=t.clientX-sx;
+    if (isHorizontalSwipe && Math.abs(dx)>40){ if (dx>0) publishCmd("CLOSE"); else publishCmd("OPEN"); }
     sx=sy=null; isHorizontalSwipe=false;
   },{passive:true});
-sx=sy=null; isHorizontalSwipe=false;
-},{passive:true});
-let mx=null; gateViewport.addEventListener("mousedown",(e)=>{ mx=e.clientX; });
-gateViewport.addEventListener("mouseup",(e)=>{ if(mx==null)return; const dx=e.clientX-mx; if(Math.abs(dx)>40){ if(dx>0) publishCmd("CLOSE"); else publishCmd("OPEN"); } mx=null; });
+  let mx=null; gateViewport.addEventListener("mousedown",(e)=>{ mx=e.clientX; });
+  gateViewport.addEventListener("mouseup",(e)=>{ if(mx==null)return; const dx=e.clientX-mx; if(Math.abs(dx)>40){ if(dx>0) publishCmd("CLOSE"); else publishCmd("OPEN"); } mx=null; });
 
   renderByProgress(0);
-  // mouse fallback (desktop) – la fel, inversat:
-  let mx=null;
-  gateViewport.addEventListener("mousedown",(e)=>{ mx=e.clientX; });
-  gateViewport.addEventListener("mouseup",(e)=>{
-    if (mx==null) return;
-    const dx=e.clientX-mx;
-    if (Math.abs(dx)>40){
-      if (dx > 0){        // dreapta
-        publishCmd("CLOSE");
-      } else {            // stânga
-        publishCmd("OPEN");
-      }
-    } else { /* publishCmd("STOP"); log("Click: STOP"); */ }
-    mx=null;
-  });
 
-  // Inițial: arată progres 0 (închis)
-renderByProgress(0);
-
-/* ---------- Calibrare (REST către ESP) ---------- */
+  /* ---------- Calibrare (REST către ESP) ---------- */
   $("#espUrl").value = "http://192.168.0.42"; // pune IP-ul tău
-  $("#espUrl").value = "http://esp.local";   // pune IP-ul tău dacă nu ai mDNS
 
-const st=$("#st"), pr=$("#pr"), pg=$("#pg"), so=$("#so"), sc=$("#sc");
-const mo=$("#mo"), co=$("#co"), mc=$("#mc"), cc=$("#cc"), to=$("#to"), tc=$("#tc");
+  const st=$("#st"), pr=$("#pr"), pg=$("#pg"), so=$("#so"), sc=$("#sc");
+  const mo=$("#mo"), co=$("#co"), mc=$("#mc"), cc=$("#cc"), to=$("#to"), tc=$("#tc");
   const errBox=$("#errBox");
 
   function showErr(t){ errBox.textContent=t; errBox.style.display='inline-block'; }
@@ -467,10 +296,9 @@ const mo=$("#mo"), co=$("#co"), mc=$("#mc"), cc=$("#cc"), to=$("#to"), tc=$("#tc
     if (!/^https?:\/\//.test(u)) u = 'http://' + u;     // forțează http://
     return u.replace(/\/+$/,'');                        // fără slash la final
   }
-  function esp(){ let u=$("#espUrl").value.trim(); if(!u) u="http://esp.local"; if(!/^https?:\/\//.test(u)) u="http://"+u; return u; }
-function showMsg(t,cls){ const m=$("#msg"); m.textContent=t; m.className="badge "+(cls||"warn"); m.style.display="inline-block"; setTimeout(()=>m.style.display="none",2500); }
-function setInd(el,on){ el.textContent = on?"ON":"OFF"; el.className = "pill " + (on?"on":"off"); }
-function setBadge(el,txt){ el.textContent=txt; el.className="badge "+(txt==="measuring"?"warn":(txt==="done"?"ok":"")); }
+  function showMsg(t,cls){ const m=$("#msg"); m.textContent=t; m.className="badge "+(cls||"warn"); m.style.display="inline-block"; setTimeout(()=>m.style.display="none",2500); }
+  function setInd(el,on){ el.textContent = on?"ON":"OFF"; el.className = "pill " + (on?"on":"off"); }
+  function setBadge(el,txt){ el.textContent=txt; el.className="badge "+(txt==="measuring"?"warn":(txt==="done"?"ok":"")); }
 
   // Buton TEST
   $("#btnTest").addEventListener('click', async ()=>{
@@ -487,63 +315,58 @@ function setBadge(el,txt){ el.textContent=txt; el.className="badge "+(txt==="mea
     }
   });
 
-async function tickCalib(){
-if (tabCalib.style.display==="none") return;
+  async function tickCalib(){
+    if (tabCalib.style.display==="none") return;
     const base = esp(); if (!base) return;
-try{
+    try{
       const r = await fetch(base + "/api/state", {cache:"no-store"});
-      const r = await fetch(esp()+"/api/state", {cache:"no-store"});
-const j = await r.json();
+      const j = await r.json();
       hideErr();
-st.textContent=j.state; pr.textContent=j.progress; pg.value=j.progress;
-setInd(so, j.openLimit); setInd(sc, j.closedLimit);
-to.textContent=j.tOpenMs; tc.textContent=j.tCloseMs;
-mo.textContent = (j.measOpenMs>=0)? j.measOpenMs : "—";   setBadge(co, j.calibStateOpen);
-mc.textContent = (j.measCloseMs>=0)? j.measCloseMs : "—"; setBadge(cc, j.calibStateClose);
+      st.textContent=j.state; pr.textContent=j.progress; pg.value=j.progress;
+      setInd(so, j.openLimit); setInd(sc, j.closedLimit);
+      to.textContent=j.tOpenMs; tc.textContent=j.tCloseMs;
+      mo.textContent = (j.measOpenMs>=0)? j.measOpenMs : "—";   setBadge(co, j.calibStateOpen);
+      mc.textContent = (j.measCloseMs>=0)? j.measCloseMs : "—"; setBadge(cc, j.calibStateClose);
     }catch(e){
       showErr('Nu pot citi /api/state (verifică URL, rețea, CORS, HTTPS/HTTP)');
     }
-    }catch(e){ /* tăcem dacă ESP nu răspunde */ }
-}
+  }
   setInterval(tickCalib, 700);
-  setInterval(tickCalib, 500);
 
-async function calibStart(dir, force){
+  async function calibStart(dir, force){
     hideErr();
     const base = esp(); if (!base){ showErr('Setează ESP URL'); return; }
-try{
+    try{
       const r = await fetch(base + `/api/calib_start?dir=${dir}&force=${force|0}`);
       showMsg(await r.text(), r.ok?'ok':'err');
       if (!r.ok) showErr('calib_start a răspuns cu HTTP ' + r.status);
     }catch(e){ showErr('Eroare conexiune la calib_start'); }
-      const r = await fetch(esp()+`/api/calib_start?dir=${dir}&force=${force|0}`);
-      showMsg(await r.text(), r.ok?"ok":"err");
-    }catch(e){ showMsg("ESP indisponibil", "err"); }
-}
-async function saveCalib(dir){
+  }
+  async function saveCalib(dir){
     hideErr();
     const base = esp(); if (!base){ showErr('Setează ESP URL'); return; }
-try{
+    try{
       const r = await fetch(base + `/api/calib_save?dir=${dir}`);
       showMsg(await r.text(), r.ok?'ok':'err');
       if (!r.ok) showErr('calib_save a răspuns cu HTTP ' + r.status);
-      const r = await fetch(esp()+`/api/calib_save?dir=${dir}`);
-      showMsg(await r.text(), r.ok?"ok":"err");
-tickCalib();
+      tickCalib();
     }catch(e){ showErr('Eroare conexiune la calib_save'); }
-    }catch(e){ showMsg("ESP indisponibil", "err"); }
-}
-async function sendCmd(c){
+  }
+  async function sendCmd(c){
     hideErr();
     const base = esp(); if (!base){ showErr('Setează ESP URL'); return; }
-try{
+    try{
       const r = await fetch(base + `/api/cmd?c=${encodeURIComponent(c)}`);
       showMsg(await r.text(), r.ok?'ok':'err');
       if (!r.ok) showErr('cmd a răspuns cu HTTP ' + r.status);
     }catch(e){ showErr('Eroare conexiune la cmd'); }
-      const r = await fetch(esp()+`/api/cmd?c=${encodeURIComponent(c)}`);
-      showMsg(await r.text(), r.ok?"ok":"err");
-    }catch(e){ showMsg("ESP indisponibil", "err"); }
-}
+  }
 
-// expune în scope tab Calibrare
+  // expune în scope tab Calibrare
+  window.calibStart = calibStart;
+  window.saveCalib = saveCalib;
+  window.sendCmd   = sendCmd;
+})();
+</script>
+</body>
+</html>
