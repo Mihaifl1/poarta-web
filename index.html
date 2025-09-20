@@ -129,9 +129,12 @@
       <div class="title" style="font-size:15px">Calibrare (ESP REST)</div>
       <div class="small">
         ESP URL:
-        <input id="espUrl" type="text" placeholder="http://esp.local" style="width:180px">
+        <input id="espUrl" type="text" placeholder="http://192.168.0.42" style="width:180px">
+        <button class="btn" id="btnTest" style="padding:6px 10px;margin-left:6px">Test</button>
       </div>
     </div>
+
+    <div id="errBox" class="badge err" style="display:none;margin:6px 0"></div>
 
     <div class="small" style="margin-top:6px">
       <b>Stare ESP:</b> <span id="st">—</span>
@@ -278,48 +281,85 @@
   renderByProgress(0);
 
   /* ---------- Calibrare (REST către ESP) ---------- */
-  $("#espUrl").value = "http://esp.local";   // pune IP-ul tău dacă nu ai mDNS
+  $("#espUrl").value = "http://192.168.0.42"; // pune IP-ul tău
 
   const st=$("#st"), pr=$("#pr"), pg=$("#pg"), so=$("#so"), sc=$("#sc");
   const mo=$("#mo"), co=$("#co"), mc=$("#mc"), cc=$("#cc"), to=$("#to"), tc=$("#tc");
+  const errBox=$("#errBox");
 
-  function esp(){ let u=$("#espUrl").value.trim(); if(!u) u="http://esp.local"; if(!/^https?:\/\//.test(u)) u="http://"+u; return u; }
+  function showErr(t){ errBox.textContent=t; errBox.style.display='inline-block'; }
+  function hideErr(){ errBox.style.display='none'; }
+
+  function esp(){
+    let u=$("#espUrl").value.trim();
+    if (!u) return null;
+    if (!/^https?:\/\//.test(u)) u = 'http://' + u;     // forțează http://
+    return u.replace(/\/+$/,'');                        // fără slash la final
+  }
   function showMsg(t,cls){ const m=$("#msg"); m.textContent=t; m.className="badge "+(cls||"warn"); m.style.display="inline-block"; setTimeout(()=>m.style.display="none",2500); }
   function setInd(el,on){ el.textContent = on?"ON":"OFF"; el.className = "pill " + (on?"on":"off"); }
   function setBadge(el,txt){ el.textContent=txt; el.className="badge "+(txt==="measuring"?"warn":(txt==="done"?"ok":"")); }
 
+  // Buton TEST
+  $("#btnTest").addEventListener('click', async ()=>{
+    hideErr();
+    const base = esp(); if (!base){ showErr('Setează ESP URL (ex: http://192.168.0.42)'); return; }
+    try{
+      const r = await fetch(base + '/api/state', {cache:'no-store'});
+      if (!r.ok){ showErr('HTTP '+r.status+' la /api/state'); return; }
+      const j = await r.json();
+      showErr('OK: ' + JSON.stringify(j));
+      setTimeout(hideErr, 2500);
+    }catch(e){
+      showErr('Eroare conexiune: ' + (e && e.message || e));
+    }
+  });
+
   async function tickCalib(){
     if (tabCalib.style.display==="none") return;
+    const base = esp(); if (!base) return;
     try{
-      const r = await fetch(esp()+"/api/state", {cache:"no-store"});
+      const r = await fetch(base + "/api/state", {cache:"no-store"});
       const j = await r.json();
+      hideErr();
       st.textContent=j.state; pr.textContent=j.progress; pg.value=j.progress;
       setInd(so, j.openLimit); setInd(sc, j.closedLimit);
       to.textContent=j.tOpenMs; tc.textContent=j.tCloseMs;
       mo.textContent = (j.measOpenMs>=0)? j.measOpenMs : "—";   setBadge(co, j.calibStateOpen);
       mc.textContent = (j.measCloseMs>=0)? j.measCloseMs : "—"; setBadge(cc, j.calibStateClose);
-    }catch(e){ /* tăcem dacă ESP nu răspunde */ }
+    }catch(e){
+      showErr('Nu pot citi /api/state (verifică URL, rețea, CORS, HTTPS/HTTP)');
+    }
   }
-  setInterval(tickCalib, 500);
+  setInterval(tickCalib, 700);
 
   async function calibStart(dir, force){
+    hideErr();
+    const base = esp(); if (!base){ showErr('Setează ESP URL'); return; }
     try{
-      const r = await fetch(esp()+`/api/calib_start?dir=${dir}&force=${force|0}`);
-      showMsg(await r.text(), r.ok?"ok":"err");
-    }catch(e){ showMsg("ESP indisponibil", "err"); }
+      const r = await fetch(base + `/api/calib_start?dir=${dir}&force=${force|0}`);
+      showMsg(await r.text(), r.ok?'ok':'err');
+      if (!r.ok) showErr('calib_start a răspuns cu HTTP ' + r.status);
+    }catch(e){ showErr('Eroare conexiune la calib_start'); }
   }
   async function saveCalib(dir){
+    hideErr();
+    const base = esp(); if (!base){ showErr('Setează ESP URL'); return; }
     try{
-      const r = await fetch(esp()+`/api/calib_save?dir=${dir}`);
-      showMsg(await r.text(), r.ok?"ok":"err");
+      const r = await fetch(base + `/api/calib_save?dir=${dir}`);
+      showMsg(await r.text(), r.ok?'ok':'err');
+      if (!r.ok) showErr('calib_save a răspuns cu HTTP ' + r.status);
       tickCalib();
-    }catch(e){ showMsg("ESP indisponibil", "err"); }
+    }catch(e){ showErr('Eroare conexiune la calib_save'); }
   }
   async function sendCmd(c){
+    hideErr();
+    const base = esp(); if (!base){ showErr('Setează ESP URL'); return; }
     try{
-      const r = await fetch(esp()+`/api/cmd?c=${encodeURIComponent(c)}`);
-      showMsg(await r.text(), r.ok?"ok":"err");
-    }catch(e){ showMsg("ESP indisponibil", "err"); }
+      const r = await fetch(base + `/api/cmd?c=${encodeURIComponent(c)}`);
+      showMsg(await r.text(), r.ok?'ok':'err');
+      if (!r.ok) showErr('cmd a răspuns cu HTTP ' + r.status);
+    }catch(e){ showErr('Eroare conexiune la cmd'); }
   }
 
   // expune în scope tab Calibrare
