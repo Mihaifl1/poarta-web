@@ -1,45 +1,202 @@
-<!doctype html>
+ <!doctype html>
 <html lang="ro">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Poartă – Control mobil</title>
-<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-<style>
-  :root{ --bg:#0b1220; --card:#071022; --ok:#22c55e; --err:#ef4444; --muted:#9fb0d8; }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#071026);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  .wrap{max-width:480px;margin:0 auto;padding:0 10px 16px}
-  .tabbar{position:sticky;top:0;background:transparent;padding:10px 0 8px;z-index:10;display:flex;gap:8px}
-  .tabbtn{flex:1;padding:10px;border:1px solid rgba(255,255,255,.07);background:#0b1428;color:#dfe9ff;border-radius:10px;font-weight:600}
-  .tabbtn.active{background:#123;border-color:#2c4272}
-  .card{background:var(--card);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.03);margin-top:10px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  input[type=text],input[type=password]{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:transparent;color:#dfe9ff}
-  .btn{padding:10px;border-radius:10px;border:0;background:linear-gradient(180deg,#11366b,#07224a);color:#fff;font-weight:700}
-  .btn.secondary{background:linear-gradient(180deg,#2a2a2a,#141414)}
-  .controls{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
-  .small{color:var(--muted);font-size:12px}
-  .title{color:#fff;font-weight:800;font-size:16px;margin:0}
-  .top{display:flex;align-items:center;justify-content:space-between}
-  .dot{width:10px;height:10px;border-radius:50%;background:var(--err);display:inline-block}
-  progress{width:100%;height:10px;border-radius:8px;overflow:hidden}
 
-  /* ZONA POARTĂ */
-  .gateWrap{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06);background:linear-gradient(90deg,#081021,#05101a)}
-  .viewport{position:relative;height:220px;touch-action: pan-y}
-  .wall{position:absolute;left:0;top:0;width:24%;height:100%;background:linear-gradient(90deg,#000 0%, rgba(0,0,0,0.65) 70%, transparent 100%);pointer-events:none;z-index:2}
-  #gateImg{
-    --prog: 0; position:absolute; left:4%; top:50%;
-    transform:translate(calc(var(--prog) * -65%), -50%);
-    opacity:1; filter:none; width:92%; max-width:360px;
-    transition: transform 150ms linear; display:block; z-index:1;
-    box-shadow:0 10px 18px rgba(0,0,0,.35)
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+:root{
+  --bg:#0b1220;
+  --card:#071022;
+  --ok:#22c55e;
+  --err:#ef4444;
+  --muted:#9fb0d8;
+}
+
+html,body{
+  height:100%;
+  margin:0;
+  background:linear-gradient(180deg,var(--bg),#071026);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+
+.wrap{
+  max-width:480px;
+  margin:0 auto;
+  padding:0 10px 16px;
+}
+
+.tabbar{
+  position:sticky;
+  top:0;
+  background:transparent;
+  padding:10px 0 8px;
+  z-index:10;
+  display:flex;
+  gap:8px;
+}
+
+.tabbtn{
+  flex:1;
+  padding:10px;
+  border:1px solid rgba(255,255,255,.07);
+  background:#0b1428;
+  color:#dfe9ff;
+  border-radius:10px;
+  font-weight:600;
+}
+
+.tabbtn.active{
+  background:#123;
+  border-color:#2c4272;
+}
+
+.card{
+  background:var(--card);
+  border-radius:12px;
+  padding:10px;
+  box-shadow:0 6px 18px rgba(0,0,0,.5);
+  border:1px solid rgba(255,255,255,.03);
+  margin-top:10px;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+input[type=text],
+input[type=password]{
+  width:100%;
+  padding:9px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.06);
+  background:transparent;
+  color:#dfe9ff;
+}
+
+.btn{
+  padding:10px;
+  border-radius:10px;
+  border:0;
+  background:linear-gradient(180deg,#11366b,#07224a);
+  color:#fff;
+  font-weight:700;
+}
+
+.btn.secondary{
+  background:linear-gradient(180deg,#2a2a2a,#141414);
+}
+
+.controls{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-top:10px;
+  flex-wrap:wrap;
+}
+
+.small{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.title{
+  color:#fff;
+  font-weight:800;
+  font-size:16px;
+  margin:0;
+}
+
+.top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--err);
+  display:inline-block;
+}
+
+progress{
+  width:100%;
+  height:10px;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+/* ZONA POARTĂ */
+.gateWrap{
+  position:relative;
+  margin-top:10px;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);
+  background:linear-gradient(90deg,#081021,#05101a);
+}
+
+.viewport{
+  position:relative;
+  height:220px;
+  touch-action:pan-y;
+}
+
+.wall{
+  position:absolute;
+  left:0;
+  top:0;
+  width:24%;
+  height:100%;
+  background:linear-gradient(90deg,#000 0%, rgba(0,0,0,0.65) 70%, transparent 100%);
+  pointer-events:none;
+  z-index:2;
+}
+
+#gateImg{
+  --prog:0;
+  position:absolute;
+  left:4%;
+  top:50%;
+  transform:translate(calc(var(--prog) * -65%), -50%);
+  opacity:1;
+  filter:none;
+  width:92%;
+  max-width:360px;
+  transition:transform 150ms linear;
+  display:block;
+  z-index:1;
+  box-shadow:0 10px 18px rgba(0,0,0,.35);
+}
+
+@media (max-width:360px){
+  .viewport{
+    height:190px;
   }
-  @media (max-width:360px){ .viewport{height:190px} }
-  textarea{width:100%;height:120px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#dfe9ff;padding:8px;font-size:12px}
+}
+
+textarea{
+  width:100%;
+  height:120px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(0,0,0,.2);
+  color:#dfe9ff;
+  padding:8px;
+  font-size:12px;
+}
 </style>
 </head>
+
 <body>
+
 <div class="wrap">
 
   <!-- TABURI -->
@@ -48,163 +205,473 @@
     <button class="tabbtn" id="tabSettingsBtn">Setări</button>
   </div>
 
-  <!-- TAB 1: POARTĂ -->
+  <!-- TAB POARTĂ -->
   <section id="tabGate" class="card">
+
     <div class="top">
       <h1 class="title">Poartă</h1>
-      <div class="small">Conexiune: <span id="connDot" class="dot"></span></div>
+
+      <div class="small">
+        Conexiune:
+        <span id="connDot" class="dot"></span>
+      </div>
     </div>
 
     <div class="small" style="margin-top:6px">
-      <strong>Stare:</strong> <span id="statusText">necunoscut</span>
+      <strong>Stare:</strong>
+      <span id="statusText">necunoscut</span>
     </div>
+
     <div class="small" style="margin-top:6px">
-      <strong>Progres:</strong> <span id="pval">0%</span>
+      <strong>Progres:</strong>
+      <span id="pval">0%</span>
+
       <progress id="progress" value="0" max="100"></progress>
     </div>
 
     <div class="gateWrap">
-      <div class="viewport" id="gateViewport" aria-label="Zona poartă (swipe)">
+      <div class="viewport" id="gateViewport">
+
         <div class="wall"></div>
+
         <img id="gateImg" src="poarta.JPG" alt="Poartă" />
+
       </div>
     </div>
 
     <div class="controls">
-      <button id="btnConnectMain" class="btn">Conectează</button>
       <button id="btnOpenMain" class="btn">OPEN</button>
       <button id="btnCloseMain" class="btn secondary">CLOSE</button>
     </div>
 
     <div class="small" style="margin-top:6px">
-      Gesturi: swipe dreapta = CLOSE • swipe stânga = OPEN
+      Swipe stânga = OPEN • Swipe dreapta = CLOSE
     </div>
+
   </section>
 
-  <!-- TAB 2: SETĂRI -->
+  <!-- TAB SETĂRI -->
   <section id="tabSettings" class="card" style="display:none">
+
     <div class="top">
+
       <div>
-        <div class="title" style="font-size:15px">Setări & Conectare</div>
-        <div class="small">MQTT (WebSockets)</div>
+        <div class="title" style="font-size:15px">
+          Setări MQTT
+        </div>
+
+        <div class="small">
+          WebSocket MQTT
+        </div>
       </div>
-      <div class="small">Client: <span id="clientId">web_—</span></div>
+
+      <div class="small">
+        Client:
+        <span id="clientId">web_—</span>
+      </div>
+
     </div>
 
     <div class="row" style="margin-top:8px">
-      <input id="url" type="text" placeholder="wss://broker.emqx.io:8084/mqtt" />
-      <input id="cid" type="text" placeholder="Client ID (opțional)" />
-      <input id="user" type="text" placeholder="User (opțional)" />
-      <input id="pass" type="password" placeholder="Parolă (opțional)" />
+
+      <input id="url" type="text" />
+      <input id="cid" type="text" placeholder="Client ID" />
+
+      <input id="user" type="text" placeholder="User" />
+      <input id="pass" type="password" placeholder="Parolă" />
+
     </div>
 
     <div class="row" style="margin-top:8px">
-      <input id="cmdTopic" type="text" placeholder="kablem/gates/1/cmd" />
-      <input id="statusTopic" type="text" placeholder="kablem/gates/1/status" />
-      <input id="progressTopic" type="text" placeholder="kablem/gates/1/progress" />
+
+      <input id="cmdTopic" type="text" />
+      <input id="statusTopic" type="text" />
+      <input id="progressTopic" type="text" />
+
       <div></div>
+
     </div>
 
     <div class="controls">
-      <button id="btnConnect" class="btn">Conectează</button>
-      <button id="btnDisconnect" class="btn secondary" disabled>Deconectează</button>
+      <button id="btnReconnect" class="btn">
+        Reconectează
+      </button>
+
+      <button id="btnDisconnect" class="btn secondary">
+        Deconectează
+      </button>
     </div>
 
     <div style="margin-top:10px">
+
       <div class="small">Jurnal</div>
+
       <textarea id="log" readonly></textarea>
+
     </div>
+
   </section>
 
 </div>
 
 <script>
 (function(){
+
   const $ = s => document.querySelector(s);
 
-  /* ---------- Tabs ---------- */
-  const tabGateBtn = $("#tabGateBtn"), tabSettingsBtn = $("#tabSettingsBtn");
-  const tabGate = $("#tabGate"), tabSettings = $("#tabSettings");
+  /* ---------------- TABS ---------------- */
+
+  const tabGateBtn = $("#tabGateBtn");
+  const tabSettingsBtn = $("#tabSettingsBtn");
+
+  const tabGate = $("#tabGate");
+  const tabSettings = $("#tabSettings");
+
   function showTab(which){
-    tabGate.style.display     = which==="gate"     ? "" : "none";
-    tabSettings.style.display = which==="settings" ? "" : "none";
-    tabGateBtn.classList.toggle("active", which==="gate");
-    tabSettingsBtn.classList.toggle("active", which==="settings");
+
+    tabGate.style.display =
+      which === "gate" ? "" : "none";
+
+    tabSettings.style.display =
+      which === "settings" ? "" : "none";
+
+    tabGateBtn.classList.toggle(
+      "active",
+      which === "gate"
+    );
+
+    tabSettingsBtn.classList.toggle(
+      "active",
+      which === "settings"
+    );
   }
-  tabGateBtn.addEventListener("click", ()=>showTab("gate"));
-  tabSettingsBtn.addEventListener("click", ()=>showTab("settings"));
 
-  /* ---------- MQTT ---------- */
-  const log = (m)=>{ const t=new Date().toLocaleTimeString(); const box=$("#log"); if(box){ box.value=`[${t}] ${m}\n`+box.value; box.scrollTop=0; } };
-  $("#url").value="wss://broker.emqx.io:8084/mqtt";
-  $("#cmdTopic").value="kablem/gates/1/cmd";
-  $("#statusTopic").value="kablem/gates/1/status";
-  $("#progressTopic").value="kablem/gates/1/progress";
+  tabGateBtn.onclick = () => showTab("gate");
+  tabSettingsBtn.onclick = () => showTab("settings");
 
-  const connDot=$("#connDot"), statusText=$("#statusText"), progressEl=$("#progress"), pval=$("#pval"), gateImg=$("#gateImg"), clientIdEl=$("#clientId"), gateViewport=$("#gateViewport");
+  /* ---------------- MQTT ---------------- */
+
+  const connDot = $("#connDot");
+  const statusText = $("#statusText");
+  const progressEl = $("#progress");
+  const pval = $("#pval");
+  const gateImg = $("#gateImg");
+  const clientIdEl = $("#clientId");
+
+  let client = null;
+  let connected = false;
+
+  const logBox = $("#log");
+
+  function log(txt){
+
+    const t = new Date().toLocaleTimeString();
+
+    logBox.value =
+      `[${t}] ${txt}\n` + logBox.value;
+
+    logBox.scrollTop = 0;
+  }
+
+  /* SETĂRI DEFAULT */
+
+  $("#url").value =
+    "wss://broker.emqx.io:8084/mqtt";
+
+  $("#cmdTopic").value =
+    "kablem/gates/1/cmd";
+
+  $("#statusTopic").value =
+    "kablem/gates/1/status";
+
+  $("#progressTopic").value =
+    "kablem/gates/1/progress";
+
+  /* ---------------- UI ---------------- */
+
+  function setUiConnected(v){
+
+    connected = v;
+
+    connDot.style.background =
+      v ? "#22c55e" : "#ef4444";
+  }
 
   function renderByProgress(p){
-    const clamped=Math.max(0,Math.min(100,Number(p)||0));
-    progressEl.value=clamped; pval.textContent=clamped+"%";
-    gateImg.style.setProperty('--prog',(clamped/100).toString());
+
+    const clamped =
+      Math.max(0, Math.min(100, Number(p) || 0));
+
+    progressEl.value = clamped;
+
+    pval.textContent = clamped + "%";
+
+    gateImg.style.setProperty(
+      '--prog',
+      (clamped / 100).toString()
+    );
   }
 
-  let client=null, connected=false;
-  function setUiConnected(v){ connected=v; $("#btnConnect").disabled=v; $("#btnDisconnect").disabled=!v; connDot.style.background=v?"#22c55e":"#ef4444"; }
+  /* ---------------- CONNECT ---------------- */
+
   function mqttConnect(){
-    if (connected) return;
-    const url=$("#url").value.trim();
-    const cid=$("#cid").value.trim()||("web_"+Math.random().toString(16).slice(2));
-    clientIdEl.textContent=cid;
-    const opts={clientId:cid,username:$("#user").value.trim()||undefined,password:$("#pass").value.trim()||undefined,reconnectPeriod:2000,clean:true};
-    log("Connecting to "+url+" ...");
-    client=mqtt.connect(url,opts);
+
+    if(connected) return;
+
+    const url =
+      $("#url").value.trim();
+
+    const cid =
+      $("#cid").value.trim() ||
+      ("web_" + Math.random().toString(16).slice(2));
+
+    clientIdEl.textContent = cid;
+
+    log("Connecting...");
+
+    client = mqtt.connect(url,{
+      clientId: cid,
+      username: $("#user").value.trim() || undefined,
+      password: $("#pass").value.trim() || undefined,
+      reconnectPeriod: 3000,
+      clean: true
+    });
+
     client.on("connect", ()=>{
-      setUiConnected(true); log("Connected");
-      const topics=[$("#statusTopic").value.trim(), $("#progressTopic").value.trim()];
-      client.subscribe(topics,(err)=>{ if(err) log("Subscribe error: "+err.message); else log("Subscribed: "+topics.join(", ")); });
-      client.publish($("#cmdTopic").value.trim(),"STATUS?");
+
+      setUiConnected(true);
+
+      log("MQTT Connected");
+
+      const topics = [
+        $("#statusTopic").value.trim(),
+        $("#progressTopic").value.trim()
+      ];
+
+      client.subscribe(topics, err=>{
+
+        if(err){
+          log("Subscribe error: " + err.message);
+        }else{
+          log("Subscribed OK");
+        }
+      });
+
+      client.publish(
+        $("#cmdTopic").value.trim(),
+        "STATUS?"
+      );
     });
+
     client.on("message",(topic,payload)=>{
-      const msg=payload.toString(); log("MSG "+topic+" → "+msg);
-      if (topic===$("#statusTopic").value.trim()) { statusText.textContent=msg; }
-      if (topic===$("#progressTopic").value.trim()) { const n=parseInt(msg,10); if(!isNaN(n)) renderByProgress(n); }
+
+      const msg = payload.toString();
+
+      log(topic + " → " + msg);
+
+      if(topic === $("#statusTopic").value.trim()){
+
+        statusText.textContent = msg;
+      }
+
+      if(topic === $("#progressTopic").value.trim()){
+
+        const n = parseInt(msg);
+
+        if(!isNaN(n)){
+          renderByProgress(n);
+        }
+      }
     });
-    client.on("reconnect",()=>log("Reconnecting..."));
-    client.on("error",(e)=>log("MQTT error: "+(e&&e.message||e)));
-    client.on("close",()=>{ log("Disconnected"); setUiConnected(false); });
+
+    client.on("reconnect", ()=>{
+      log("Reconnecting...");
+    });
+
+    client.on("error",(e)=>{
+      log("Error: " + e.message);
+    });
+
+    client.on("close", ()=>{
+
+      setUiConnected(false);
+
+      log("Disconnected");
+    });
   }
-  function mqttDisconnect(){ if(client){ client.end(true); client=null; setUiConnected(false); log("Client closed"); } }
-  $("#btnConnect").addEventListener("click", mqttConnect);
-  $("#btnDisconnect").addEventListener("click", mqttDisconnect);
-  $("#btnConnectMain").addEventListener("click", mqttConnect);
+
+  function mqttDisconnect(){
+
+    if(client){
+
+      client.end(true);
+
+      client = null;
+
+      setUiConnected(false);
+
+      log("Disconnected manually");
+    }
+  }
+
+  /* ---------------- PUBLISH ---------------- */
 
   function publishCmd(cmd){
-    if (!client || !connected){ log("Not connected"); return; }
-    const t=$("#cmdTopic").value.trim();
-    client.publish(t, cmd, {qos:1}, (err)=> log(err?("Publish error "+err.message):("Published "+cmd+" → "+t)));
-  }
-  $("#btnOpenMain").addEventListener("click", ()=> publishCmd("OPEN"));
-  $("#btnCloseMain").addEventListener("click", ()=> publishCmd("CLOSE"));
 
-  // Gesturi pe imagine
-  let sx=null, sy=null, isHorizontalSwipe=false;
-  gateViewport.addEventListener("touchstart",(ev)=>{ const t=ev.changedTouches[0]; sx=t.clientX; sy=t.clientY; isHorizontalSwipe=false; },{passive:true});
-  gateViewport.addEventListener("touchmove",(ev)=>{
-    if (sx==null) return; const t=ev.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy;
-    if (!isHorizontalSwipe && Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)) isHorizontalSwipe=true;
-    if (isHorizontalSwipe) ev.preventDefault();
-  },{passive:false});
-  gateViewport.addEventListener("touchend",(ev)=>{
-    if (sx==null) return; const t=ev.changedTouches[0]; const dx=t.clientX-sx;
-    if (isHorizontalSwipe && Math.abs(dx)>40){ if (dx>0) publishCmd("CLOSE"); else publishCmd("OPEN"); }
-    sx=sy=null; isHorizontalSwipe=false;
+    if(!client || !connected){
+
+      log("MQTT not connected");
+
+      return;
+    }
+
+    const topic =
+      $("#cmdTopic").value.trim();
+
+    client.publish(
+      topic,
+      cmd,
+      { qos:1 },
+      err => {
+
+        if(err){
+          log("Publish error");
+        }else{
+          log("Sent: " + cmd);
+        }
+      }
+    );
+  }
+
+  $("#btnOpenMain").onclick =
+    ()=> publishCmd("OPEN");
+
+  $("#btnCloseMain").onclick =
+    ()=> publishCmd("CLOSE");
+
+  $("#btnReconnect").onclick = ()=>{
+
+    mqttDisconnect();
+
+    setTimeout(()=>{
+      mqttConnect();
+    },500);
+  };
+
+  $("#btnDisconnect").onclick =
+    mqttDisconnect;
+
+  /* ---------------- SWIPE ---------------- */
+
+  const gateViewport = $("#gateViewport");
+
+  let sx = null;
+  let sy = null;
+  let horizontal = false;
+
+  gateViewport.addEventListener("touchstart",(e)=>{
+
+    const t = e.changedTouches[0];
+
+    sx = t.clientX;
+    sy = t.clientY;
+
+    horizontal = false;
+
   },{passive:true});
-  let mx=null; gateViewport.addEventListener("mousedown",(e)=>{ mx=e.clientX; });
-  gateViewport.addEventListener("mouseup",(e)=>{ if(mx==null)return; const dx=e.clientX-mx; if(Math.abs(dx)>40){ if(dx>0) publishCmd("CLOSE"); else publishCmd("OPEN"); } mx=null; });
+
+  gateViewport.addEventListener("touchmove",(e)=>{
+
+    if(sx == null) return;
+
+    const t = e.changedTouches[0];
+
+    const dx = t.clientX - sx;
+    const dy = t.clientY - sy;
+
+    if(
+      !horizontal &&
+      Math.abs(dx) > 40 &&
+      Math.abs(dx) > Math.abs(dy)
+    ){
+      horizontal = true;
+    }
+
+    if(horizontal){
+      e.preventDefault();
+    }
+
+  },{passive:false});
+
+  gateViewport.addEventListener("touchend",(e)=>{
+
+    if(sx == null) return;
+
+    const t = e.changedTouches[0];
+
+    const dx = t.clientX - sx;
+
+    if(horizontal && Math.abs(dx) > 40){
+
+      if(dx > 0){
+
+        publishCmd("CLOSE");
+
+      }else{
+
+        publishCmd("OPEN");
+      }
+    }
+
+    sx = null;
+    sy = null;
+    horizontal = false;
+
+  },{passive:true});
+
+  /* MOUSE */
+
+  let mx = null;
+
+  gateViewport.addEventListener("mousedown",(e)=>{
+    mx = e.clientX;
+  });
+
+  gateViewport.addEventListener("mouseup",(e)=>{
+
+    if(mx == null) return;
+
+    const dx = e.clientX - mx;
+
+    if(Math.abs(dx) > 40){
+
+      if(dx > 0){
+
+        publishCmd("CLOSE");
+
+      }else{
+
+        publishCmd("OPEN");
+      }
+    }
+
+    mx = null;
+  });
+
+  /* ---------------- AUTO CONNECT ---------------- */
 
   renderByProgress(0);
+
+  window.addEventListener("load", ()=>{
+
+    log("Auto connect...");
+
+    mqttConnect();
+
+  });
+
 })();
 </script>
+
 </body>
 </html>
