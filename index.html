@@ -1,196 +1,391 @@
- <!doctype html>
+<!doctype html>
 <html lang="ro">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Poartă – Control mobil</title>
+<title>Poartă – Control mobil MQTT</title>
 
+<!-- Import client MQTT securizat asigurat prin CDN -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
 <style>
-:root{
-  --bg:#0b1220;
-  --card:#071022;
-  --ok:#22c55e;
-  --err:#ef4444;
-  --muted:#9fb0d8;
+:root {
+  --bg: #0b1220;
+  --card: #0d172e;
+  --ok: #22c55e;
+  --err: #ef4444;
+  --accent: #c9a063;
+  --muted: #8ea5d9;
+  --border: rgba(201, 160, 99, 0.15);
 }
 
-html,body{
-  height:100%;
-  margin:0;
-  background:linear-gradient(180deg,var(--bg),#071026);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+* {
+  box-sizing: border-box;
 }
 
-.wrap{
-  max-width:480px;
-  margin:0 auto;
-  padding:0 10px 16px;
+html, body {
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(180deg, var(--bg), #060914);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #dfe9ff;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.tabbar{
-  position:sticky;
-  top:0;
-  background:transparent;
-  padding:10px 0 8px;
-  z-index:10;
-  display:flex;
-  gap:8px;
+.wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.tabbtn{
-  flex:1;
-  padding:10px;
-  border:1px solid rgba(255,255,255,.07);
-  background:#0b1428;
-  color:#dfe9ff;
-  border-radius:10px;
-  font-weight:600;
+/* Antet Custom de Brand */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 12px;
 }
 
-.tabbtn.active{
-  background:#123;
-  border-color:#2c4272;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.card{
-  background:var(--card);
-  border-radius:12px;
-  padding:10px;
-  box-shadow:0 6px 18px rgba(0,0,0,.5);
-  border:1px solid rgba(255,255,255,.03);
-  margin-top:10px;
+.brand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
 }
 
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
+.brand-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #fff;
+}
+
+/* Bara de Navigare Taburi */
+.tabbar {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.tabbtn {
+  flex: 1;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  color: #8c9cb1;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.tabbtn.active {
+  background: #14213d;
+  color: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Stiluri Cartonașe */
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--err);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--err);
+  transition: all 0.3s ease;
+}
+
+.dot.connected {
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+
+/* Afișaj Parametri Tehnici */
+.status-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(0,0,0,0.15);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.02);
+  margin-bottom: 16px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.status-label {
+  color: #6d80a6;
+}
+
+.status-value {
+  font-weight: 700;
+  color: #fff;
+}
+
+.status-value.status-open {
+  color: var(--ok);
+}
+
+.status-value.status-closed {
+  color: #94a3b8;
+}
+
+.status-value.status-moving {
+  color: var(--accent);
+  animation: pulse-gold 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-gold {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Progress Bar Custom */
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  appearance: none;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+progress::-webkit-progress-bar {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #1e40af, var(--accent));
+  border-radius: 6px;
+}
+
+/* ZONA DESIGN POARTĂ VIZUALĂ */
+.gateWrap {
+  position: relative;
+  margin: 16px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(201, 160, 99, 0.1);
+  background: linear-gradient(90deg, #050a14, #020408);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
+
+.viewport {
+  position: relative;
+  height: 220px;
+  width: 100%;
+  touch-action: pan-y;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wall {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28%;
+  height: 100%;
+  background: linear-gradient(90deg, #000 0%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+#gateImg {
+  --prog: 0.5;
+  position: absolute;
+  left: 5%;
+  top: 50%;
+  transform: translate(calc(var(--prog) * -65%), -50%);
+  width: 90%;
+  max-width: 360px;
+  transition: transform 180ms cubic-bezier(0.25, 1, 0.5, 1);
+  display: block;
+  z-index: 1;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+  border-radius: 8px;
+}
+
+/* CONTROALE TACTILE ȘI BUTOANE */
+.controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.btn {
+  flex: 1;
+  padding: 15px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, #1b3a70, #0a1935);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 15px rgba(11, 26, 56, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  background: #0f244c;
+}
+
+.btn.secondary {
+  background: linear-gradient(180deg, #2a2a2a, #141414);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.btn.secondary:active {
+  background: #1c1c1c;
+}
+
+.btn-open {
+  background: linear-gradient(180deg, #1e3a8a, #111827);
+  box-shadow: 0 0 15px rgba(30, 58, 138, 0.2);
+}
+
+.btn-close {
+  background: linear-gradient(180deg, #475569, #0f172a);
+  box-shadow: 0 0 15px rgba(71, 85, 105, 0.2);
+}
+
+.hint-text {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* SETĂRI INTRODUCERE VALORI */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6d80a6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 input[type=text],
-input[type=password]{
-  width:100%;
-  padding:9px;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,.06);
-  background:transparent;
-  color:#dfe9ff;
+input[type=password] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #060a14;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
 }
 
-.btn{
-  padding:10px;
-  border-radius:10px;
-  border:0;
-  background:linear-gradient(180deg,#11366b,#07224a);
-  color:#fff;
-  font-weight:700;
+input[type=text]:focus,
+input[type=password]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(201, 160, 99, 0.2);
 }
 
-.btn.secondary{
-  background:linear-gradient(180deg,#2a2a2a,#141414);
+textarea {
+  width: 100%;
+  height: 140px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #040710;
+  color: #8da4d5;
+  padding: 12px;
+  font-size: 11px;
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  outline: none;
+  resize: none;
 }
 
-.controls{
-  display:flex;
-  gap:8px;
-  justify-content:center;
-  margin-top:10px;
-  flex-wrap:wrap;
-}
-
-.small{
-  color:var(--muted);
-  font-size:12px;
-}
-
-.title{
-  color:#fff;
-  font-weight:800;
-  font-size:16px;
-  margin:0;
-}
-
-.top{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-
-.dot{
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  background:var(--err);
-  display:inline-block;
-}
-
-progress{
-  width:100%;
-  height:10px;
-  border-radius:8px;
-  overflow:hidden;
-}
-
-/* ZONA POARTĂ */
-.gateWrap{
-  position:relative;
-  margin-top:10px;
-  border-radius:12px;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,.06);
-  background:linear-gradient(90deg,#081021,#05101a);
-}
-
-.viewport{
-  position:relative;
-  height:220px;
-  touch-action:pan-y;
-}
-
-.wall{
-  position:absolute;
-  left:0;
-  top:0;
-  width:24%;
-  height:100%;
-  background:linear-gradient(90deg,#000 0%, rgba(0,0,0,0.65) 70%, transparent 100%);
-  pointer-events:none;
-  z-index:2;
-}
-
-#gateImg{
-  --prog:0;
-  position:absolute;
-  left:4%;
-  top:50%;
-  transform:translate(calc(var(--prog) * -65%), -50%);
-  opacity:1;
-  filter:none;
-  width:92%;
-  max-width:360px;
-  transition:transform 150ms linear;
-  display:block;
-  z-index:1;
-  box-shadow:0 10px 18px rgba(0,0,0,.35);
-}
-
-@media (max-width:360px){
-  .viewport{
-    height:190px;
-  }
-}
-
-textarea{
-  width:100%;
-  height:120px;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,.06);
-  background:rgba(0,0,0,.2);
-  color:#dfe9ff;
-  padding:8px;
-  font-size:12px;
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.04);
+  margin: 16px 0;
 }
 </style>
 </head>
@@ -199,115 +394,124 @@ textarea{
 
 <div class="wrap">
 
-  <!-- TABURI -->
+  <!-- BRAND HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div class="brand-title">VISIONGATE MOBILE</div>
+    </div>
+    <div class="connection-status">
+      Conexiune:
+      <span id="connDot" class="dot"></span>
+    </div>
+  </header>
+
+  <!-- TAB SELECTOR -->
   <div class="tabbar">
-    <button class="tabbtn active" id="tabGateBtn">Poartă</button>
-    <button class="tabbtn" id="tabSettingsBtn">Setări</button>
+    <button class="tabbtn active" id="tabGateBtn">PANOU PORTAL</button>
+    <button class="tabbtn" id="tabSettingsBtn">PARAMETRI MQTT</button>
   </div>
 
-  <!-- TAB POARTĂ -->
+  <!-- TAB PORTAL POARTĂ -->
   <section id="tabGate" class="card">
 
-    <div class="top">
-      <h1 class="title">Poartă</h1>
-
-      <div class="small">
-        Conexiune:
-        <span id="connDot" class="dot"></span>
+    <div class="status-grid">
+      <div class="status-item">
+        <span class="status-label">Stare Sistem local:</span>
+        <span id="statusText" class="status-value status-moving">Analiză...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Deschidere Poartă:</span>
+        <span id="pval" class="status-value" style="font-family: monospace;">50%</span>
+      </div>
+      
+      <div class="progress-container">
+        <progress id="progress" value="50" max="100"></progress>
       </div>
     </div>
 
-    <div class="small" style="margin-top:6px">
-      <strong>Stare:</strong>
-      <span id="statusText">necunoscut</span>
-    </div>
-
-    <div class="small" style="margin-top:6px">
-      <strong>Progres:</strong>
-      <span id="pval">0%</span>
-
-      <progress id="progress" value="0" max="100"></progress>
-    </div>
-
+    <!-- VIZUALIZATOR MIȘCARE POARTĂ -->
     <div class="gateWrap">
       <div class="viewport" id="gateViewport">
-
         <div class="wall"></div>
-
-        <img id="gateImg" src="poarta.JPG" alt="Poartă" />
-
+        <img id="gateImg" src="poarta.JPG" onerror="this.src='https://images.unsplash.com/photo-1549576490-b0b4831da60a?auto=format&fit=crop&q=80&w=640'" alt="Poartă" />
       </div>
     </div>
 
+    <!-- CONTROALE PRINCIPALE -->
     <div class="controls">
-      <button id="btnOpenMain" class="btn">OPEN</button>
-      <button id="btnCloseMain" class="btn secondary">CLOSE</button>
+      <button id="btnOpenMain" class="btn btn-open">OPEN (Deschide)</button>
+      <button id="btnCloseMain" class="btn btn-close secondary">CLOSE (Închide)</button>
     </div>
 
-    <div class="small" style="margin-top:6px">
-      Swipe stânga = OPEN • Swipe dreapta = CLOSE
+    <div class="hint-text">
+      Swipe în stânga ◄ = OPEN • Swipe în dreapta ► = CLOSE
     </div>
 
   </section>
 
-  <!-- TAB SETĂRI -->
+  <!-- TAB EDITARE DEFINIȚIE PARAMETRI -->
   <section id="tabSettings" class="card" style="display:none">
-
+    
     <div class="top">
-
       <div>
-        <div class="title" style="font-size:15px">
-          Setări MQTT
-        </div>
-
-        <div class="small">
-          WebSocket MQTT
-        </div>
+        <div class="title" style="font-size:14px; color:#fff">Configurări Broker</div>
+        <div class="hint-text" style="text-align:left; margin-top:2px;">WebSocket MQTT Client</div>
       </div>
+      <div class="status-value" id="clientId" style="font-size:11px; font-family:monospace; color:#8fa8dc">web_initial</div>
+    </div>
 
-      <div class="small">
-        Client:
-        <span id="clientId">web_—</span>
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <label>Server WebSockets Broker URL</label>
+      <input id="url" type="text" value="wss://broker.emqx.io:8084/mqtt" />
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>Client ID unic</label>
+        <input id="cid" type="text" placeholder="Auto-generat" />
       </div>
-
+      <div class="form-group">
+        <label>Utilizator Broker</label>
+        <input id="user" type="text" placeholder="Opțional" />
+      </div>
     </div>
 
-    <div class="row" style="margin-top:8px">
-
-      <input id="url" type="text" />
-      <input id="cid" type="text" placeholder="Client ID" />
-
-      <input id="user" type="text" placeholder="User" />
-      <input id="pass" type="password" placeholder="Parolă" />
-
+    <div class="form-group">
+      <label>Parolă utilizator</label>
+      <input id="pass" type="password" placeholder="Opțional" />
     </div>
 
-    <div class="row" style="margin-top:8px">
+    <div class="divider"></div>
 
-      <input id="cmdTopic" type="text" />
-      <input id="statusTopic" type="text" />
-      <input id="progressTopic" type="text" />
-
-      <div></div>
-
+    <div class="row">
+      <div class="form-group">
+        <label>Topic comandă</label>
+        <input id="cmdTopic" type="text" value="kablem/gates/1/cmd" />
+      </div>
+      <div class="form-group">
+        <label>Topic stare brută</label>
+        <input id="statusTopic" type="text" value="kablem/gates/1/status" />
+      </div>
     </div>
+
+    <div class="form-group">
+      <label>Topic progres (% deschidere)</label>
+      <input id="progressTopic" type="text" value="kablem/gates/1/progress" />
+    </div>
+
+    <div class="divider"></div>
 
     <div class="controls">
-      <button id="btnReconnect" class="btn">
-        Reconectează
-      </button>
-
-      <button id="btnDisconnect" class="btn secondary">
-        Deconectează
-      </button>
+      <button id="btnReconnect" class="btn" style="background:#2c4272">Reconectează</button>
+      <button id="btnDisconnect" class="btn secondary">Deconectează</button>
     </div>
 
-    <div style="margin-top:10px">
-
-      <div class="small">Jurnal</div>
-
+    <div class="form-group" style="margin-top:16px">
+      <label>Jurnal istoric de conectare</label>
       <textarea id="log" readonly></textarea>
-
     </div>
 
   </section>
@@ -316,360 +520,263 @@ textarea{
 
 <script>
 (function(){
-
   const $ = s => document.querySelector(s);
 
-  /* ---------------- TABS ---------------- */
-
+  /* ---------------- GESTIONARE NAVIGARE TAB-URI ---------------- */
   const tabGateBtn = $("#tabGateBtn");
   const tabSettingsBtn = $("#tabSettingsBtn");
-
   const tabGate = $("#tabGate");
   const tabSettings = $("#tabSettings");
 
   function showTab(which){
+    tabGate.style.display = which === "gate" ? "" : "none";
+    tabSettings.style.display = which === "settings" ? "" : "none";
 
-    tabGate.style.display =
-      which === "gate" ? "" : "none";
-
-    tabSettings.style.display =
-      which === "settings" ? "" : "none";
-
-    tabGateBtn.classList.toggle(
-      "active",
-      which === "gate"
-    );
-
-    tabSettingsBtn.classList.toggle(
-      "active",
-      which === "settings"
-    );
+    tabGateBtn.classList.toggle("active", which === "gate");
+    tabSettingsBtn.classList.toggle("active", which === "settings");
   }
 
   tabGateBtn.onclick = () => showTab("gate");
   tabSettingsBtn.onclick = () => showTab("settings");
 
-  /* ---------------- MQTT ---------------- */
-
+  /* ---------------- CONECTIVITATE MQTT CLIENT ---------------- */
   const connDot = $("#connDot");
   const statusText = $("#statusText");
   const progressEl = $("#progress");
   const pval = $("#pval");
   const gateImg = $("#gateImg");
   const clientIdEl = $("#clientId");
+  const logBox = $("#log");
 
   let client = null;
   let connected = false;
 
-  const logBox = $("#log");
-
   function log(txt){
-
-    const t = new Date().toLocaleTimeString();
-
-    logBox.value =
-      `[${t}] ${txt}\n` + logBox.value;
-
+    const t = new Date().toLocaleTimeString("ro-RO", { hour12: false });
+    logBox.value = `[${t}] ${txt}\n` + logBox.value;
     logBox.scrollTop = 0;
   }
 
-  /* SETĂRI DEFAULT */
-
-  $("#url").value =
-    "wss://broker.emqx.io:8084/mqtt";
-
-  $("#cmdTopic").value =
-    "kablem/gates/1/cmd";
-
-  $("#statusTopic").value =
-    "kablem/gates/1/status";
-
-  $("#progressTopic").value =
-    "kablem/gates/1/progress";
-
-  /* ---------------- UI ---------------- */
-
   function setUiConnected(v){
-
     connected = v;
-
-    connDot.style.background =
-      v ? "#22c55e" : "#ef4444";
+    if(v) {
+      connDot.classList.add("connected");
+    } else {
+      connDot.classList.remove("connected");
+    }
   }
 
   function renderByProgress(p){
-
-    const clamped =
-      Math.max(0, Math.min(100, Number(p) || 0));
-
+    const clamped = Math.max(0, Math.min(100, Number(p) || 0));
     progressEl.value = clamped;
-
     pval.textContent = clamped + "%";
-
-    gateImg.style.setProperty(
-      '--prog',
-      (clamped / 100).toString()
-    );
+    
+    // Translatare CSS: 0% deschidere = 0 (pe loc), 100% deschidere = -65% (glisată maxim la stânga)
+    gateImg.style.setProperty('--prog', (clamped / 100).toString());
   }
 
-  /* ---------------- CONNECT ---------------- */
+  function updateStatusStyle(stare){
+    statusText.textContent = stare.toUpperCase();
+    statusText.className = "status-value";
+    
+    if(stare.toLowerCase() === "open" || stare.toLowerCase() === "deschis") {
+      statusText.classList.add("status-open");
+    } else if(stare.toLowerCase() === "closed" || stare.toLowerCase() === "închis" || stare.toLowerCase() === "inchis") {
+      statusText.classList.add("status-closed");
+    } else {
+      statusText.classList.add("status-moving");
+    }
+  }
 
+  /* ---------------- INIȚIALIZARE CONEXIUNE MQTT ---------------- */
   function mqttConnect(){
-
     if(connected) return;
 
-    const url =
-      $("#url").value.trim();
-
-    const cid =
-      $("#cid").value.trim() ||
-      ("web_" + Math.random().toString(16).slice(2));
+    const url = $("#url").value.trim();
+    const cid = $("#cid").value.trim() || ("web_mobile_" + Math.random().toString(16).slice(2, 10));
 
     clientIdEl.textContent = cid;
+    log("Se inițiază conexiunea la broker " + url + "...");
 
-    log("Connecting...");
-
-    client = mqtt.connect(url,{
+    const options = {
       clientId: cid,
-      username: $("#user").value.trim() || undefined,
-      password: $("#pass").value.trim() || undefined,
       reconnectPeriod: 3000,
       clean: true
-    });
+    };
 
-    client.on("connect", ()=>{
+    const username = $("#user").value.trim();
+    const password = $("#pass").value.trim();
+    if(username) options.username = username;
+    if(password) options.password = password;
 
-      setUiConnected(true);
+    try {
+      client = mqtt.connect(url, options);
 
-      log("MQTT Connected");
+      client.on("connect", ()=>{
+        setUiConnected(true);
+        log("Conectat la Brokerul MQTT EMQX cu succes!");
 
-      const topics = [
-        $("#statusTopic").value.trim(),
-        $("#progressTopic").value.trim()
-      ];
+        const statusTopic = $("#statusTopic").value.trim();
+        const progressTopic = $("#progressTopic").value.trim();
 
-      client.subscribe(topics, err=>{
+        client.subscribe([statusTopic, progressTopic], err => {
+          if(err){
+            log("Eroare de abonare topicuri: " + err.message);
+          } else {
+            log("Abonat cu succes la topicul Status și Progres.");
+          }
+        });
 
-        if(err){
-          log("Subscribe error: " + err.message);
-        }else{
-          log("Subscribed OK");
+        // Solicită direct de la Python starea curentă a porții
+        const cmdTopic = $("#cmdTopic").value.trim();
+        client.publish(cmdTopic, "STATUS?", { qos: 1 });
+        log("S-a trimis interogarea STATUS? către detectorul local Python.");
+      });
+
+      client.on("message", (topic, payload) => {
+        const msg = payload.toString().trim();
+        log(`Mesaj primit [${topic}] → ${msg}`);
+
+        if(topic === $("#statusTopic").value.trim()){
+          updateStatusStyle(msg);
+        }
+
+        if(topic === $("#progressTopic").value.trim()){
+          const n = parseInt(msg);
+          if(!isNaN(n)){
+            renderByProgress(n);
+          }
         }
       });
 
-      client.publish(
-        $("#cmdTopic").value.trim(),
-        "STATUS?"
-      );
-    });
+      client.on("reconnect", () => {
+        log("Re-conectare la rețea în curs...");
+      });
 
-    client.on("message",(topic,payload)=>{
+      client.on("error", (e) => {
+        log("Eroare canal de date: " + e.message);
+      });
 
-      const msg = payload.toString();
+      client.on("close", () => {
+        setUiConnected(false);
+        log("Sesiunea MQTT s-a de-conectat.");
+      });
 
-      log(topic + " → " + msg);
-
-      if(topic === $("#statusTopic").value.trim()){
-
-        statusText.textContent = msg;
-      }
-
-      if(topic === $("#progressTopic").value.trim()){
-
-        const n = parseInt(msg);
-
-        if(!isNaN(n)){
-          renderByProgress(n);
-        }
-      }
-    });
-
-    client.on("reconnect", ()=>{
-      log("Reconnecting...");
-    });
-
-    client.on("error",(e)=>{
-      log("Error: " + e.message);
-    });
-
-    client.on("close", ()=>{
-
-      setUiConnected(false);
-
-      log("Disconnected");
-    });
+    } catch (err) {
+      log("Excepție socket: " + err.message);
+    }
   }
 
   function mqttDisconnect(){
-
     if(client){
-
       client.end(true);
-
       client = null;
-
       setUiConnected(false);
-
-      log("Disconnected manually");
+      log("Deconectat manual de utilizator.");
     }
   }
 
-  /* ---------------- PUBLISH ---------------- */
-
+  /* ---------------- EMITERE COMANDĂ MQTT DE LA DISTANȚĂ ---------------- */
   function publishCmd(cmd){
-
     if(!client || !connected){
-
-      log("MQTT not connected");
-
+      log("Utilizare imposibilă: Robotul MQTT nu este conectat la rețea.");
       return;
     }
 
-    const topic =
-      $("#cmdTopic").value.trim();
-
-    client.publish(
-      topic,
-      cmd,
-      { qos:1 },
-      err => {
-
-        if(err){
-          log("Publish error");
-        }else{
-          log("Sent: " + cmd);
-        }
+    const topic = $("#cmdTopic").value.trim();
+    client.publish(topic, cmd, { qos: 1 }, err => {
+      if(err){
+        log("Eroare la transmiterea comenzii '" + cmd + "'.");
+      } else {
+        log("Comandă expediată cu succes: '" + cmd + "'.");
       }
-    );
+    });
   }
 
-  $("#btnOpenMain").onclick =
-    ()=> publishCmd("OPEN");
+  $("#btnOpenMain").onclick = () => publishCmd("OPEN");
+  $("#btnCloseMain").onclick = () => publishCmd("CLOSE");
 
-  $("#btnCloseMain").onclick =
-    ()=> publishCmd("CLOSE");
-
-  $("#btnReconnect").onclick = ()=>{
-
+  $("#btnReconnect").onclick = () => {
     mqttDisconnect();
-
-    setTimeout(()=>{
+    setTimeout(() => {
       mqttConnect();
-    },500);
+    }, 500);
   };
 
-  $("#btnDisconnect").onclick =
-    mqttDisconnect;
+  $("#btnDisconnect").onclick = mqttDisconnect;
 
-  /* ---------------- SWIPE ---------------- */
-
+  /* ---------------- COMPORTAMENT SWIPE GESTURES ---------------- */
   const gateViewport = $("#gateViewport");
-
   let sx = null;
   let sy = null;
   let horizontal = false;
 
-  gateViewport.addEventListener("touchstart",(e)=>{
-
+  gateViewport.addEventListener("touchstart", (e) => {
     const t = e.changedTouches[0];
-
     sx = t.clientX;
     sy = t.clientY;
-
     horizontal = false;
+  }, { passive: true });
 
-  },{passive:true});
-
-  gateViewport.addEventListener("touchmove",(e)=>{
-
+  gateViewport.addEventListener("touchmove", (e) => {
     if(sx == null) return;
-
     const t = e.changedTouches[0];
-
     const dx = t.clientX - sx;
     const dy = t.clientY - sy;
 
-    if(
-      !horizontal &&
-      Math.abs(dx) > 40 &&
-      Math.abs(dx) > Math.abs(dy)
-    ){
+    // Detectează dacă mișcarea e predominant orizontală
+    if(!horizontal && Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)){
       horizontal = true;
     }
 
     if(horizontal){
-      e.preventDefault();
+      if(e.cancelable) e.preventDefault();
     }
+  }, { passive: false });
 
-  },{passive:false});
-
-  gateViewport.addEventListener("touchend",(e)=>{
-
+  gateViewport.addEventListener("touchend", (e) => {
     if(sx == null) return;
-
     const t = e.changedTouches[0];
-
     const dx = t.clientX - sx;
 
     if(horizontal && Math.abs(dx) > 40){
-
       if(dx > 0){
-
+        // Swipe spre dreapta de la stânga -> Trage poarta să o închidă
         publishCmd("CLOSE");
-
-      }else{
-
+      } else {
+        // Swipe spre stânga -> Trage poarta să o deschidă (spre perete)
         publishCmd("OPEN");
       }
     }
-
     sx = null;
     sy = null;
     horizontal = false;
+  }, { passive: true });
 
-  },{passive:true});
-
-  /* MOUSE */
-
+  /* REPLICĂ DE CRONOMETRU DE MOUSE PENTRU DESKTOP TESTING */
   let mx = null;
-
-  gateViewport.addEventListener("mousedown",(e)=>{
+  gateViewport.addEventListener("mousedown", (e) => {
     mx = e.clientX;
   });
 
-  gateViewport.addEventListener("mouseup",(e)=>{
-
+  gateViewport.addEventListener("mouseup", (e) => {
     if(mx == null) return;
-
     const dx = e.clientX - mx;
-
     if(Math.abs(dx) > 40){
-
-      if(dx > 0){
-
+      if(dx > 0) {
         publishCmd("CLOSE");
-
-      }else{
-
+      } else {
         publishCmd("OPEN");
       }
     }
-
     mx = null;
   });
 
-  /* ---------------- AUTO CONNECT ---------------- */
-
-  renderByProgress(0);
-
-  window.addEventListener("load", ()=>{
-
-    log("Auto connect...");
-
+  /* AUTO-CONNECT LA DESCHIDEREA PAGINII */
+  renderByProgress(50);
+  window.addEventListener("DOMContentLoaded", () => {
     mqttConnect();
-
   });
-
 })();
 </script>
 
