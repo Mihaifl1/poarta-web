@@ -422,11 +422,11 @@ textarea {
       </div>
       <div class="status-item">
         <span class="status-label">Deschidere Poartă:</span>
-        <span id="pval" class="status-value" style="font-family: monospace;">50%</span>
+        <span id="pval" class="status-value" style="font-family: monospace;">--%</span>
       </div>
       
       <div class="progress-container">
-        <progress id="progress" value="50" max="100"></progress>
+        <progress id="progress" value="0" max="100"></progress>
       </div>
     </div>
 
@@ -773,10 +773,13 @@ textarea {
   });
 
   /* AUTO-CONNECT LA DESCHIDEREA PAGINII */
-  renderByProgress(50);
   window.addEventListener("DOMContentLoaded", () => {
+
+    pval.textContent = "--%";
+    progressEl.value = 0;
+
     mqttConnect();
-  });
+});
 })();
 </script>
 
